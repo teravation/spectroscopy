@@ -17,7 +17,15 @@ Legacy Java source for reference: **[github.com/teravation/spectroscopy-legacy](
 
 ## Current status
 
-Phase 1 (playable core) not yet started. See project.md for phased build order.
+- ✅ `spectroscopy-legacy` — archived on GitHub (github.com/teravation/spectroscopy-legacy)
+- ✅ `teravation/spectroscopy` — repo created, initial docs pushed
+- ✅ `spectroscopy.app` — registered on Namecheap
+- ✅ `~/.claude/CLAUDE.md` — global Claude Code instructions created
+- ⬜ Route 53 hosted zone for spectroscopy.app — not yet created
+- ⬜ Namecheap NS records → Route 53 — not yet delegated
+- ⬜ ACM wildcard cert (`*.spectroscopy.app`) in us-east-1 — not yet requested
+- ⬜ S3 buckets + CloudFront distribution — not yet created
+- ⬜ Phase 1 build — not yet started (see project.md for phased build order)
 
 ## Conventions
 
