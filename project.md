@@ -69,7 +69,7 @@ What stays the same:
 
 ## Original UI Specification (fully reconstructed from source)
 
-The original was 800×600 px fixed. The modern reboot should be **responsive** but preserve the visual DNA.
+The original was 800×600 px fixed. The modern reboot should be **responsive** but preserve the visual DNA.  We also need to ensure that it will run on a variety of devices, especially mobile phones.
 
 ### Visual Hierarchy (original)
 
@@ -443,7 +443,7 @@ These details are easy to get wrong when porting from Java. Do not deviate from 
 | Line width | `max(1, floor(log10(intensity - 5)))` pixels wide, centered on column. Strongest lines (intensity > 105) are 2px. |
 | Equality tolerance | `|working_velocity - target_velocity| < 0.01`. With slider range [-100..100] integers → [-1.0..1.0], this is exactly 1 slider tick. |
 | Canvas HiDPI | `canvas.width = rect.width * devicePixelRatio`; `ctx.scale(dpr, dpr)`. Otherwise spectra are blurry on Retina displays. |
-| Rendering optimization | Use a running pointer into the sorted lines array to find max intensity at each pixel — avoids O(n²) scan for elements with many lines (some transition metals have 100+ lines). |
+| Rendering optimization | Use a running pointer into the sorted lines array to find max intensity at each pixel — avoids O(n²) scan for elements with many lines (some transition metals have 100+ lines). Pre-skip lines below 4000 Å before the loop — the Java applet did not do this, causing blueshifted sub-visible lines to bleed intensity onto the leftmost pixel. Intentional fix. |
 | Table rows 9 & 10 | Row 9 = lanthanides, row 10 = actinides. Render with a visual gap above them in CSS Grid, matching the standard periodic table convention. |
 | Puzzle validation | Retry generation loop until at least one spectral line falls in [3000–7000 Å] with intensity > 5. |
 | Wavelength render range | 4000–7000 Å displayed (maps linearly to canvas width). |
@@ -498,6 +498,9 @@ Original Java source lives at `../src/` relative to this file (the v1 project ro
 18. Keyboard navigation on periodic table (arrow keys move focus, Enter toggles, Tab to buttons)
 19. ARIA labels on spectrum canvases (text description: "Target spectrum: 3 elements, moderate redshift")
 20. Mobile layout: stacked canvases, periodic table cells ≥44px touch targets, horizontal scroll if needed
+21. Periodic table cell density: hide atomic number on small screens (symbol sufficient for gameplay); show element name inside cell on large screens (e.g. ≥1400px) where there is room
+22. Font sizing polish: current cqw-based scaling needs tuning across breakpoints — symbols and atomic numbers should feel proportional at all screen sizes
+23. Height-constrained layout: when the viewport is short (e.g. landscape mobile, small laptop), scale the periodic table down so it fully fits on screen without scrolling — consider CSS `transform: scale()` on the root container based on available height vs. content height
 21. First-visit tutorial overlay (dismissible, stored in `localStorage`)
 
 ---

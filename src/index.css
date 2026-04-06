@@ -1,0 +1,58 @@
+:root {
+  --color-bg: #000000;
+  --color-text: #ffffff;
+  --color-selected: #ffff00;
+  --color-border: #ffffff;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: sans-serif;
+}
+
+/* Periodic table font scaling — cqw is % of the grid container width.
+   Each cell is 1/18 of grid width, so 1cqw / 18 ≈ one cell unit. */
+.pt-grid {
+  container-type: inline-size;
+}
+.pt-symbol {
+  font-size: 2.2cqw;  /* ~40% of one cell */
+  font-weight: bold;
+  line-height: 1;
+  align-self: center;
+  margin-top: auto;  /* always pushes symbol to bottom regardless of whether number is shown */
+}
+.pt-number {
+  font-size: 1.6cqw;  /* ~29% of one cell */
+  line-height: 1;
+}
+
+@media (max-width: 600px) {
+  .pt-number {
+    display: none;
+  }
+}
+
+/* Normalize slider thumb to a known size so tick labels can be precisely aligned */
+:root {
+  --slider-thumb-width: 16px;
+}
+
+input[type="range"] {
+  padding: 0;
+  margin: 0;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  width: var(--slider-thumb-width);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: var(--slider-thumb-width);
+}

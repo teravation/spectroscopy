@@ -4,7 +4,7 @@
 
 React + TypeScript reboot of a 2003 Java spectroscopy applet. Educational puzzle game where users identify chemical elements and Doppler velocity from a mystery spectrum. Live at spectroscopy.app.
 
-Full spec, architecture decisions, physics details, and phased build plan: **[project.md](project.md)**  
+Full spec, architecture decisions, physics details, and phased build plan: **[PROJECT.md](PROJECT.md)**  
 Legacy Java source for reference: **[github.com/teravation/spectroscopy-legacy](https://github.com/teravation/spectroscopy-legacy)**
 
 ## Key facts
@@ -25,7 +25,7 @@ Legacy Java source for reference: **[github.com/teravation/spectroscopy-legacy](
 - ⬜ Namecheap NS records → Route 53 — not yet delegated
 - ⬜ ACM wildcard cert (`*.spectroscopy.app`) in us-east-1 — not yet requested
 - ⬜ S3 buckets + CloudFront distribution — not yet created
-- ⬜ Phase 1 build — not yet started (see project.md for phased build order)
+- 🔄 Phase 1 build — in progress (scaffold done; physics layer next)
 
 ## Conventions
 
@@ -33,6 +33,6 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for code standards, branch workflow, and 
 
 ## Do not
 
-- Change physics formulas without reading the fidelity notes in project.md — they must match the original Java applet exactly
+- Change physics formulas without reading the fidelity notes in PROJECT.md — they must match the original Java applet exactly
 - Commit `.env` files
 - Push directly to `main`

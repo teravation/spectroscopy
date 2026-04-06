@@ -1,0 +1,89 @@
+import { useState } from 'react'
+import type { Element } from '../physics/types'
+
+interface Props {
+  elements: Element[]
+  selectedIds: Set<number>
+  onToggle: (atomicNumber: number) => void
+  maxRow?: number
+}
+
+// Element rows 9–10 (lanthanides/actinides) → grid rows 9–10
+// Row 8 is left empty as a visual spacer gap
+function elementGridRow(row: number): number {
+  return row
+}
+
+export function PeriodicTable({ elements, selectedIds, onToggle, maxRow }: Props) {
+  const [hoveredName, setHoveredName] = useState('')
+
+  const visible = maxRow ? elements.filter(e => e.row <= maxRow) : elements
+
+  return (
+    <div style={styles.wrapper}>
+      <div className="pt-grid" style={styles.grid}>
+        {visible.map(e => {
+          const color = selectedIds.has(e.atomicNumber) ? '#ffff00' : '#ffffff'
+          return (
+            <div
+              key={e.atomicNumber}
+              role="button"
+              tabIndex={0}
+              onClick={() => onToggle(e.atomicNumber)}
+              onKeyDown={ev => { if (ev.key === 'Enter' || ev.key === ' ') onToggle(e.atomicNumber) }}
+              onMouseEnter={() => setHoveredName(e.name)}
+              onMouseLeave={() => setHoveredName('')}
+              style={{
+                ...styles.cell,
+                gridRow: elementGridRow(e.row),
+                gridColumn: e.col,
+                color,
+                // box-shadow extends outside the cell — adjacent cells' shadows
+                // overlap at the shared edge, producing a single visible line
+                boxShadow: `0 0 0 1px #ffffff`,
+              }}
+              aria-pressed={selectedIds.has(e.atomicNumber)}
+              aria-label={e.name}
+            >
+              <span className="pt-number">{e.atomicNumber}</span>
+              <span className="pt-symbol">{e.symbol}</span>
+            </div>
+          )
+        })}
+      </div>
+      <div style={styles.statusBar}>{hoveredName}</div>
+    </div>
+  )
+}
+
+const styles = {
+  wrapper: {
+    background: '#000',
+    userSelect: 'none' as const,
+  },
+  grid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(18, 1fr)',
+    gridTemplateRows: 'repeat(7, 1fr) 4px repeat(2, 1fr)',
+    gap: 0,
+    margin: 4,
+    padding: 1,
+  },
+  cell: {
+    background: '#000',
+    display: 'flex',
+    flexDirection: 'column' as const,
+    justifyContent: 'space-between',
+    padding: '1px 2px',
+    aspectRatio: '1',
+    cursor: 'pointer',
+    minWidth: 0,
+  },
+  statusBar: {
+    color: '#ffffff',
+    textAlign: 'center' as const,
+    padding: '2px 0',
+    fontSize: '0.85em',
+    minHeight: '1.2em',
+  },
+} as const

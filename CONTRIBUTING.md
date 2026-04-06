@@ -2,7 +2,7 @@
 
 ## Tech Stack
 
-React + TypeScript + Vite + Zustand + TanStack React Query. See [project.md](project.md) for full architecture.
+React + TypeScript + Vite + Zustand + TanStack React Query. See [PROJECT.md](PROJECT.md) for full architecture.
 
 ## Getting Started
 

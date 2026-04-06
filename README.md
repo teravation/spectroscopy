@@ -24,7 +24,7 @@ https://spectroscopy.app/?rows=2&doppler=false
 https://spectroscopy.app/?puzzle=<encrypted-token>
 ```
 
-See [project.md](project.md) for full architecture and feature documentation.
+See [PROJECT.md](PROJECT.md) for full architecture and feature documentation.
 
 ## Development
 
