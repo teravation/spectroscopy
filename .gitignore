@@ -17,6 +17,8 @@ dist-ssr
 
 # Data pipeline scratch space (top-level only, not src/data/)
 /data/
+__pycache__/
+*.pyc
 
 # Editor directories and files
 .vscode/*
