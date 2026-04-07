@@ -15,6 +15,9 @@ dist-ssr
 # Claude Code local settings
 .claude/
 
+# Data pipeline scratch space (top-level only, not src/data/)
+/data/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

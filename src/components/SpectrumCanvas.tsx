@@ -6,6 +6,11 @@ const WAVELENGTH_MIN = 4000
 const WAVELENGTH_MAX = 7000
 const WAVELENGTH_RANGE = WAVELENGTH_MAX - WAVELENGTH_MIN
 
+// Intensity values are pre-normalized in the pipeline to a 0–1000 scale
+// (global max across all elements = 1000). See ELEMENTS.md and scripts/fetch_elements.py.
+// Lines at or below this threshold are invisible.
+const INTENSITY_THRESHOLD = 50
+
 interface Props {
   lines: SpectralLine[]  // must be sorted by wavelength ascending
   isEmission: boolean
@@ -106,11 +111,11 @@ function render(
     let r: number, g: number, b: number
 
     if (isEmission) {
-      if (maxIntensity <= 5) {
+      if (maxIntensity <= INTENSITY_THRESHOLD) {
         // No line here — black background
         continue
       }
-      const log10 = Math.log10(maxIntensity - 5)
+      const log10 = Math.log10(maxIntensity - INTENSITY_THRESHOLD)
       if (log10 < 0) continue  // effectively invisible
       const scale = Math.min(log10 / 2, 1)
       // Interpolate: black → spectral color
@@ -123,8 +128,8 @@ function render(
       g = spectralColor.g
       b = spectralColor.b
 
-      if (maxIntensity > 5) {
-        const log10 = Math.log10(maxIntensity - 5)
+      if (maxIntensity > INTENSITY_THRESHOLD) {
+        const log10 = Math.log10(maxIntensity - INTENSITY_THRESHOLD)
         if (log10 >= 2) {
           // Fully absorbed — black
           r = 0; g = 0; b = 0
@@ -139,8 +144,8 @@ function render(
       }
     }
 
-    const lineWidth = maxIntensity > 5
-      ? Math.max(1, Math.floor(Math.log10(maxIntensity - 5)))
+    const lineWidth = maxIntensity > INTENSITY_THRESHOLD
+      ? Math.max(1, Math.floor(Math.log10(maxIntensity - INTENSITY_THRESHOLD)))
       : 1
 
     ctx.fillStyle = `rgb(${r},${g},${b})`

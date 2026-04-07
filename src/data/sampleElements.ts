@@ -8,8 +8,8 @@ import type { Element } from '../physics/types'
 // we remap to row 9/10 to match the visual gap convention in PeriodicTable.tsx.
 
 export const SAMPLE_ELEMENTS: Element[] = [
-  { atomicNumber: 1,   symbol: 'H',   name: 'Hydrogen',        period: 1, group: 1,  row: 1,  col: 1,  lines: [{ w: 3835.4, i: 5 }, { w: 3889.0, i: 6 }, { w: 3970.1, i: 8 }, { w: 4101.8, i: 15 }, { w: 4340.5, i: 30 }, { w: 4861.4, i: 80 }, { w: 6562.7, i: 120 }, { w: 6562.9, i: 180 }, { w: 7799.3, i: 20 }, { w: 9139.8, i: 12 }, { w: 9948.1, i: 7 }] },
-  { atomicNumber: 2,   symbol: 'He',  name: 'Helium',           period: 1, group: 18, row: 1,  col: 18, lines: [{ w: 5875.6, i: 500 }, { w: 4471.5, i: 200 }, { w: 6678.2, i: 150 }] },
+  { atomicNumber: 1,   symbol: 'H',   name: 'Hydrogen',        period: 1, group: 1,  row: 1,  col: 1,  lines: [{ w: 4101.8, i: 83 }, { w: 4340.5, i: 167 }, { w: 4861.4, i: 444 }, { w: 6562.7, i: 667 }, { w: 6562.9, i: 1000 }] },
+  { atomicNumber: 2,   symbol: 'He',  name: 'Helium',           period: 1, group: 18, row: 1,  col: 18, lines: [{ w: 4471.5, i: 400 }, { w: 5875.6, i: 1000 }, { w: 6678.2, i: 300 }] },
   { atomicNumber: 3,   symbol: 'Li',  name: 'Lithium',          period: 2, group: 1,  row: 2,  col: 1,  lines: [] },
   { atomicNumber: 4,   symbol: 'Be',  name: 'Beryllium',        period: 2, group: 2,  row: 2,  col: 2,  lines: [] },
   { atomicNumber: 5,   symbol: 'B',   name: 'Boron',            period: 2, group: 13, row: 2,  col: 13, lines: [] },

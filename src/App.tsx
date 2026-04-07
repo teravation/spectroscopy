@@ -5,6 +5,7 @@ import { PeriodicTable } from './components/PeriodicTable'
 import { DopplerSlider } from './components/DopplerSlider'
 import { GameControls } from './components/GameControls'
 import { useGameStore } from './store/gameStore'
+import { useElements } from './data/useElements'
 import { SAMPLE_ELEMENTS } from './data/sampleElements'
 
 export function App() {
@@ -15,11 +16,12 @@ export function App() {
     targetLines, workingLines,
   } = useGameStore()
 
+  const { data: elements } = useElements()
   const [message, setMessage] = useState('')
 
   useEffect(() => {
-    loadElements(SAMPLE_ELEMENTS)
-  }, [loadElements])
+    loadElements(elements ?? SAMPLE_ELEMENTS)
+  }, [elements, loadElements])
 
   function handleCheck() {
     const result = checkAnswer()
@@ -51,6 +53,8 @@ export function App() {
     resetWorking()
   }
 
+  const displayElements = elements ?? SAMPLE_ELEMENTS
+
   return (
     <div style={{ background: '#000', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* Target spectrum */}
@@ -73,7 +77,7 @@ export function App() {
         </div>
       )}
       <PeriodicTable
-        elements={SAMPLE_ELEMENTS}
+        elements={displayElements}
         selectedIds={working.elementIds}
         onToggle={toggleElement}
       />

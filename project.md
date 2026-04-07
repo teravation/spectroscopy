@@ -20,7 +20,7 @@ The app is stateless — no backend or user accounts needed for the core experie
 | [vite-plugin-pwa](https://vite-pwa-org.netlify.app) | PWA / Service Worker (Workbox) | https://vite-pwa-org.netlify.app |
 | [Vitest](https://vitest.dev) | Unit testing | https://vitest.dev |
 | [Testing Library](https://testing-library.com/docs/react-testing-library/intro/) | Component testing | https://testing-library.com |
-| [fast-xml-parser](https://github.com/NaturalIntelligence/fast-xml-parser) | XML→JSON conversion (one-time script) | https://github.com/NaturalIntelligence/fast-xml-parser |
+| [Python + requests](https://docs.python-requests.org) | Data pipeline: fetch NIST spectral data → elements.json | https://docs.python-requests.org |
 | [AWS S3](https://aws.amazon.com/s3/) | Static hosting + data assets | https://aws.amazon.com/s3/ |
 | [AWS CloudFront](https://aws.amazon.com/cloudfront/) | CDN, HTTPS, custom domains | https://aws.amazon.com/cloudfront/ |
 | [AWS Route 53](https://aws.amazon.com/route53/) | DNS + wildcard subdomains for branding (domain registered via Namecheap, NS delegated to Route 53) | https://aws.amazon.com/route53/ |
@@ -154,9 +154,11 @@ The original was 800×600 px fixed. The modern reboot should be **responsive** b
 ## Project Structure
 
 ```
-spectroscopy-web/
-├── scripts/
-│   └── convert-elements.ts         # One-time: elements.xml → elements.json
+spectroscopy/
+├── scripts/                         # Python data pipeline (not bundled in app)
+│   ├── fetch_elements.py            # Fetch NIST ASD → elements.json
+│   └── requirements.txt
+├── data/                            # gitignored; scratch space for raw/intermediate files
 ├── src/
 │   ├── physics/
 │   │   ├── types.ts                 # SpectralLine, Element, Puzzle, PuzzleSettings interfaces
@@ -300,20 +302,24 @@ Use cases summary:
 
 ## Data Pipeline
 
-### One-time conversion script
+### Fetch script
 
-`scripts/convert-elements.ts` (Node + `fast-xml-parser`, not bundled in app):
-- Parse `../data/elements.xml` (from original v1 project)
-- Merge names from `../data/elements.properties`
-- Fix 12 outdated placeholder names for elements 111–118 (Uuu → Rg, Uub → Cn, etc. — use current IUPAC names)
-- Output `elements.json`
+`scripts/fetch_elements.py` (Python + `requests`, not bundled in app). Re-run whenever NIST data is refreshed or a new element is added.
+
+- Queries the [NIST Atomic Spectra Database](https://physics.nist.gov/PhysRefData/ASD/lines_form.html) in wavelength chunks (3800–5800, 5800–7800, 7800–10000 Å)
+- Parses tab-delimited response: strips intensity suffixes, obs→Ritz fallback, deduplicates on wavelength
+- Filters intensity ≤ 50 (invisible at modern NIST scale) to keep file size reasonable
+- Merges with element metadata (name, period, group, row, col) from a hardcoded table — this never changes for known elements
+- Outputs `elements.json` with air wavelengths and modern intensity scale documented in the header
 
 ### JSON Schema
 
 ```typescript
 interface ElementsDataFile {
-  version: string;         // e.g. "2024-01" — bump on NIST data refresh
-  generatedAt: string;     // ISO timestamp
+  version: string;              // e.g. "2025-01" — bump on NIST data refresh
+  generatedAt: string;          // ISO 8601 timestamp
+  wavelengthType: "air" | "vacuum";   // which convention lines[] uses (store air, display either)
+  intensityScale: "nist-2025" | "nist-2003";  // 2025 scale is 10× higher than 2003
   elements: ElementRecord[];
 }
 
@@ -329,7 +335,9 @@ interface ElementRecord {
 }
 ```
 
-Estimated file size: ~120 KB uncompressed, ~30 KB gzipped. Easily cached.
+**Intensity scale note:** NIST intensity values are relative *within* each element — they are not comparable across elements (Mg's brightest line has raw intensity 45; Neon's is 1000+). The pipeline normalizes each element's intensities so its brightest line = 1000, then filters below `INTENSITY_THRESHOLD = 50` (i.e., lines dimmer than 5% of that element's peak are dropped). This makes the threshold meaningful for all elements uniformly and ensures every element with spectral data in range has at least one visible line.
+
+Estimated file size: ~200 KB uncompressed, ~50 KB gzipped. Easily cached.
 
 ### S3 Layout
 
@@ -480,6 +488,11 @@ Original Java source lives at `../src/` relative to this file (the v1 project ro
 8. `GameControls.tsx` + `PuzzleGenerator` (random mode only)
 9. Wire `App.tsx` — game is now playable end-to-end
 10. Deploy to S3 + CloudFront; verify elements.json loads and spectra render
+
+### Phase 1a — Additions and fixes post-launch
+- Air/vacuum wavelength toggle in UI (near Emission/Absorption toggle). Store air wavelengths as canonical; convert to vacuum at render time using Edlén formula. Toggle state lives in Zustand store (`useVacuumWavelengths: boolean`). Doppler shift is applied first (in air), then converted for display. Puzzle answer checking always uses air wavelengths regardless of toggle.
+- Periodic table layout: update row/col for La (57) and Ac (89) into main body group 3 (below Sc/Y), move Lu (71) and Lr (103) to end of lanthanide/actinide rows, shift remaining f-block elements left by one column.
+- Doppler slider tick marks at labeled positions (−100, −75, −50, −25, 0, +25, +50, +75, +100). CSS overlay preferred over native `<datalist>` for cross-browser consistency.
 
 ### Phase 2 — Educator URL sharing (1 day)
 11. `PuzzleSettingsPanel.tsx` with bidirectional URL param sync

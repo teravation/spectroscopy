@@ -4,6 +4,9 @@ import { shiftLines } from './doppler'
 const VISIBLE_MIN = 3000
 const VISIBLE_MAX = 7000
 const MAX_RETRIES = 1000
+// Intensities are pre-normalized in the pipeline (0–1000 scale, global max = 1000).
+// Matches INTENSITY_THRESHOLD in SpectrumCanvas.tsx.
+const VISIBLE_INTENSITY_MIN = 50
 
 export function generatePuzzle(settings: PuzzleSettings, elements: Element[]): Puzzle {
   if (settings.fixedElementIds) {
@@ -50,7 +53,7 @@ function hasVisibleLine(elements: Element[], velocity: number): boolean {
   for (const element of elements) {
     const shifted: SpectralLine[] = shiftLines(element.lines, velocity)
     for (const line of shifted) {
-      if (line.w >= VISIBLE_MIN && line.w <= VISIBLE_MAX && line.i > 5) {
+      if (line.w >= VISIBLE_MIN && line.w <= VISIBLE_MAX && line.i > VISIBLE_INTENSITY_MIN) {
         return true
       }
     }
