@@ -6,7 +6,7 @@ const VISIBLE_MAX = 7000
 const MAX_RETRIES = 1000
 // Intensities are pre-normalized in the pipeline (0–1000 scale, global max = 1000).
 // Matches INTENSITY_THRESHOLD in SpectrumCanvas.tsx.
-const VISIBLE_INTENSITY_MIN = 50
+const VISIBLE_INTENSITY_MIN = 10
 
 export function generatePuzzle(settings: PuzzleSettings, elements: Element[]): Puzzle {
   if (settings.fixedElementIds) {

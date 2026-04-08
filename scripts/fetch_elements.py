@@ -45,7 +45,7 @@ FALLBACK_MAX_AKI = 1e8
 # Final output scale: global max Aki across all elements maps to this value.
 # Matches INTENSITY_THRESHOLD in src/components/SpectrumCanvas.tsx (50/1000 = 5%).
 OUTPUT_MAX = 1000
-INTENSITY_THRESHOLD = 50   # lines below this after normalization are dropped
+INTENSITY_THRESHOLD = 10   # lines below this after normalization are dropped (~1% of max)
 
 # Seconds between per-element requests — be polite to NIST.
 REQUEST_DELAY = 2.0
@@ -460,8 +460,7 @@ def build_output(lines_by_z: dict[int, list[dict]]) -> dict:
 KNOWN_LINES = {
     # element: [(wavelength_air_Å, description)]
     # Only include lines bright enough to clear INTENSITY_THRESHOLD after normalization.
-    # Hδ (4101.7) and Ne 5852.5 are real but normalize below threshold — correctly absent.
-    "H":  [(6562.8, "Hα"), (4861.3, "Hβ"), (4340.5, "Hγ")],
+    "H":  [(6562.8, "Hα"), (4861.3, "Hβ"), (4340.5, "Hγ"), (4101.7, "Hδ"), (3970.1, "Hε")],
     "Na": [(5889.95, "Na D2"), (5895.92, "Na D1")],
     "Ne": [(6402.2, "Ne"), (6678.3, "Ne"), (7032.4, "Ne")],
     "He": [(5875.6, "He"), (4471.5, "He"), (6678.2, "He")],

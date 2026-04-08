@@ -8,8 +8,8 @@ const WAVELENGTH_RANGE = WAVELENGTH_MAX - WAVELENGTH_MIN
 
 // Intensity values are pre-normalized in the pipeline to a 0–1000 scale
 // (global max across all elements = 1000). See ELEMENTS.md and scripts/fetch_elements.py.
-// Lines at or below this threshold are invisible.
-const INTENSITY_THRESHOLD = 50
+// Lines at or below this threshold are invisible (~1% of max brightness).
+const INTENSITY_THRESHOLD = 10
 
 interface Props {
   lines: SpectralLine[]  // must be sorted by wavelength ascending
