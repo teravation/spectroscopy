@@ -4,20 +4,22 @@ import { SpectrumCanvas } from './components/SpectrumCanvas'
 import { PeriodicTable } from './components/PeriodicTable'
 import { DopplerSlider } from './components/DopplerSlider'
 import { GameControls } from './components/GameControls'
+import { PuzzleSettingsPanel } from './components/PuzzleSettingsPanel'
 import { useGameStore } from './store/gameStore'
 import { useElements } from './data/useElements'
 import { SAMPLE_ELEMENTS } from './data/sampleElements'
 
 export function App() {
   const {
-    targetPuzzle, working, isEmission, gamePhase,
+    targetPuzzle, working, isEmission, gamePhase, settings,
     loadElements, generateNewPuzzle, toggleElement,
     setVelocity, setEmissionMode, checkAnswer, getHint, resetWorking,
-    targetLines, workingLines,
+    targetLines, workingLines, updateSettings,
   } = useGameStore()
 
   const { data: elements } = useElements()
   const [message, setMessage] = useState('')
+  const [showSettings, setShowSettings] = useState(false)
 
   useEffect(() => {
     loadElements(elements ?? SAMPLE_ELEMENTS)
@@ -62,20 +64,23 @@ export function App() {
       <GameControls
         gamePhase={gamePhase}
         isEmission={isEmission}
+        showSettings={showSettings}
         onNewTarget={handleNewTarget}
         onCheck={handleCheck}
         onHint={handleHint}
         onReset={handleReset}
         onEmissionChange={setEmissionMode}
+        onToggleSettings={() => setShowSettings(s => !s)}
       />
+      {showSettings && (
+        <PuzzleSettingsPanel settings={settings} onChange={updateSettings} />
+      )}
       {/* Working spectrum */}
       <SpectrumCanvas lines={workingLines()} isEmission={isEmission} height={80} />
       <DopplerSlider velocity={working.velocity} onChange={setVelocity} />
-      {message && (
-        <div style={{ color: '#fff', textAlign: 'center', padding: '4px', fontSize: '0.9em' }}>
-          {message}
-        </div>
-      )}
+      <div style={{ color: '#fff', textAlign: 'center', padding: '4px', fontSize: '0.9em', minHeight: '1.6em' }}>
+        {message}
+      </div>
       <PeriodicTable
         elements={displayElements}
         selectedIds={working.elementIds}

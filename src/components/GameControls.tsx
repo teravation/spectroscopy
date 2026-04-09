@@ -1,21 +1,25 @@
 interface Props {
   gamePhase: 'idle' | 'active' | 'solved'
   isEmission: boolean
+  showSettings: boolean
   onNewTarget: () => void
   onCheck: () => void
   onHint: () => void
   onReset: () => void
   onEmissionChange: (emission: boolean) => void
+  onToggleSettings: () => void
 }
 
 export function GameControls({
   gamePhase,
   isEmission,
+  showSettings,
   onNewTarget,
   onCheck,
   onHint,
   onReset,
   onEmissionChange,
+  onToggleSettings,
 }: Props) {
   const hasTarget = gamePhase !== 'idle'
 
@@ -30,6 +34,12 @@ export function GameControls({
         </button>
         <button style={styles.button} onClick={onHint} disabled={!hasTarget}>
           Hint
+        </button>
+        <button
+          style={{ ...styles.button, color: showSettings ? '#fff' : '#aaa', borderColor: showSettings ? '#aaa' : '#444' }}
+          onClick={onToggleSettings}
+        >
+          Settings
         </button>
       </div>
       <div style={styles.right}>

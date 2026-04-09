@@ -8,7 +8,7 @@ const DEFAULT_SETTINGS: PuzzleSettings = {
   minElements: 3,
   maxElements: 3,
   elementRowDepth: 5,
-  dopplerEnabled: true,
+  dopplerEnabled: false,
 }
 
 interface GameState {
