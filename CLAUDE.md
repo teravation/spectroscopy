@@ -21,11 +21,13 @@ Legacy Java source for reference: **[github.com/teravation/spectroscopy-legacy](
 - ✅ `teravation/spectroscopy` — repo created, initial docs pushed
 - ✅ `spectroscopy.app` — registered on Namecheap
 - ✅ `~/.claude/CLAUDE.md` — global Claude Code instructions created
-- ⬜ Route 53 hosted zone for spectroscopy.app — not yet created
-- ⬜ Namecheap NS records → Route 53 — not yet delegated
-- ⬜ ACM wildcard cert (`*.spectroscopy.app`) in us-east-1 — not yet requested
-- ⬜ S3 buckets + CloudFront distribution — not yet created
-- 🔄 Phase 1 build — in progress (scaffold done; physics layer next)
+- ✅ Route 53 hosted zone for spectroscopy.app — `Z09589702Q2Y4PQNWDZMR`
+- ✅ Namecheap NS records → Route 53 — delegated
+- ✅ ACM wildcard cert (`*.spectroscopy.app`) in us-east-1 — issued (`56f973dd-b52c-4cf2-b54a-724919192a8e`)
+- ✅ S3 buckets — `spectroscopy-app` (app) + `spectroscopy-assets` (data/brands), us-west-2
+- ✅ CloudFront distributions — `E3O243NDPE0LG1` (spectroscopy.app) + `E2TYGZ9XLZ0D35` (assets.spectroscopy.app)
+- ✅ GitHub Actions deploy pipeline — push to main → build → S3 sync → CloudFront invalidation
+- ✅ Phase 1 build — complete and deployed to spectroscopy.app
 
 ## Conventions
 
