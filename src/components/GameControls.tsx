@@ -43,24 +43,26 @@ export function GameControls({
         </button>
       </div>
       <div style={styles.right}>
-        <label style={styles.radioLabel}>
-          <input
-            type="radio"
-            name="spectrumType"
-            checked={isEmission}
-            onChange={() => onEmissionChange(true)}
-          />
-          Emission
-        </label>
-        <label style={styles.radioLabel}>
-          <input
-            type="radio"
-            name="spectrumType"
-            checked={!isEmission}
-            onChange={() => onEmissionChange(false)}
-          />
-          Absorption
-        </label>
+        <div style={styles.radioGroup}>
+          <label style={styles.radioLabel}>
+            <input
+              type="radio"
+              name="spectrumType"
+              checked={isEmission}
+              onChange={() => onEmissionChange(true)}
+            />
+            Emission
+          </label>
+          <label style={styles.radioLabel}>
+            <input
+              type="radio"
+              name="spectrumType"
+              checked={!isEmission}
+              onChange={() => onEmissionChange(false)}
+            />
+            Absorption
+          </label>
+        </div>
         <button style={styles.button} onClick={onReset}>
           Reset
         </button>
@@ -75,7 +77,7 @@ const styles = {
     justifyContent: 'space-between',
     alignItems: 'center',
     background: '#000',
-    padding: '4px 8px',
+    padding: '2px 0',
     gap: 8,
   },
   left: {
@@ -86,6 +88,11 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     gap: 8,
+  },
+  radioGroup: {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: 2,
   },
   button: {
     background: '#222',

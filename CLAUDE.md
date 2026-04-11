@@ -4,7 +4,8 @@
 
 React + TypeScript reboot of a 2003 Java spectroscopy applet. Educational puzzle game where users identify chemical elements and Doppler velocity from a mystery spectrum. Live at spectroscopy.app.
 
-Full spec, architecture decisions, physics details, and phased build plan: **[PROJECT.md](PROJECT.md)**  
+Full spec, architecture decisions, and physics details: **[PROJECT.md](PROJECT.md)**  
+Build phases, open tasks, and verification checklist: **[BACKLOG.md](BACKLOG.md)**  
 Legacy Java source for reference: **[github.com/teravation/spectroscopy-legacy](https://github.com/teravation/spectroscopy-legacy)**
 
 ## Key facts

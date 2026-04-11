@@ -36,20 +36,27 @@ export function DopplerSlider({ velocity, onChange }: Props) {
 
   return (
     <div style={styles.wrapper}>
-      <input
-        type="range"
-        min={-100}
-        max={100}
-        step={1}
-        value={sliderValue}
-        onChange={handleChange}
-        style={styles.slider}
-        aria-label="Doppler velocity"
-        aria-valuemin={-100}
-        aria-valuemax={100}
-        aria-valuenow={sliderValue}
-        aria-valuetext={ALL_TICKS.find(t => t.value === sliderValue)?.label ?? `${sliderValue}`}
-      />
+      <div style={styles.sliderWrapper}>
+        <input
+          type="range"
+          min={-100}
+          max={100}
+          step={1}
+          value={sliderValue}
+          onChange={handleChange}
+          style={styles.slider}
+          aria-label="Doppler velocity"
+          aria-valuemin={-100}
+          aria-valuemax={100}
+          aria-valuenow={sliderValue}
+          aria-valuetext={ALL_TICKS.find(t => t.value === sliderValue)?.label ?? `${sliderValue}`}
+        />
+        <div style={styles.tickMarkRow}>
+          {VELOCITY_TICKS.map(t => (
+            <span key={t.value} style={{ ...styles.tickMark, left: tickLeft(t.value) }} />
+          ))}
+        </div>
+      </div>
       <div style={styles.tickRow}>
         {VELOCITY_TICKS.map(t => (
           <span key={t.value} style={{ ...styles.tick, left: tickLeft(t.value) }}>
@@ -83,6 +90,23 @@ const styles = {
     height: '1.4em',
     color: '#ffffff',
     fontSize: '0.7em',
+  },
+  sliderWrapper: {
+    position: 'relative' as const,
+  },
+  tickMarkRow: {
+    position: 'absolute' as const,
+    inset: 0,
+    pointerEvents: 'none' as const,
+  },
+  tickMark: {
+    position: 'absolute' as const,
+    display: 'inline-block' as const,
+    width: '1px',
+    height: 'calc(40% - 4px)',
+    background: '#ffffff',
+    top: 'calc(50% - 2px)',
+    transform: 'translate(-50%, -50%)',
   },
   tick: {
     position: 'absolute' as const,

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import type React from 'react'
 import type { Element } from '../physics/types'
 
 interface Props {
@@ -6,6 +7,7 @@ interface Props {
   selectedIds: Set<number>
   onToggle: (atomicNumber: number) => void
   maxRow?: number
+  overlay?: React.ReactNode
 }
 
 // Element rows 9–10 (lanthanides/actinides) → grid rows 9–10
@@ -14,7 +16,7 @@ function elementGridRow(row: number): number {
   return row
 }
 
-export function PeriodicTable({ elements, selectedIds, onToggle, maxRow }: Props) {
+export function PeriodicTable({ elements, selectedIds, onToggle, maxRow, overlay }: Props) {
   const [hoveredName, setHoveredName] = useState('')
 
   const visible = maxRow ? elements.filter(e => e.row <= maxRow) : elements
@@ -22,6 +24,11 @@ export function PeriodicTable({ elements, selectedIds, onToggle, maxRow }: Props
   return (
     <div style={styles.wrapper}>
       <div className="pt-grid" style={styles.grid}>
+        {overlay && (
+          <div style={styles.overlay}>
+            {overlay}
+          </div>
+        )}
         {visible.map(e => {
           const color = selectedIds.has(e.atomicNumber) ? '#ffff00' : '#ffffff'
           return (
@@ -66,8 +73,18 @@ const styles = {
     gridTemplateColumns: 'repeat(18, 1fr)',
     gridTemplateRows: 'repeat(7, 1fr) 4px repeat(2, 1fr)',
     gap: 0,
-    margin: 4,
+    margin: '0 4px 4px',
     padding: 1,
+  },
+  overlay: {
+    gridColumn: '3 / 13',
+    gridRow: '1 / 4',
+    display: 'flex',
+    flexDirection: 'column' as const,
+    justifyContent: 'flex-end',
+    padding: '0 4px 4px',
+    boxSizing: 'border-box' as const,
+    overflow: 'hidden',
   },
   cell: {
     background: '#000',

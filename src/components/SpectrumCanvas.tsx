@@ -83,7 +83,7 @@ function render(
   ctx.fillStyle = '#000000'
   ctx.fillRect(0, 0, width, height)
 
-  if (lines.length === 0) return
+  if (lines.length === 0 && isEmission) return
 
   let lineOffset = 0
 
