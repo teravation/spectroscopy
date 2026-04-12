@@ -133,10 +133,11 @@ export const useGameStore = create<GameState>((set, get) => ({
     return { correctElementCount, totalElements, velocityHint }
   },
 
-  resetWorking: () => set(state => ({
+  resetWorking: () => set({
+    targetPuzzle: null,
     working: { elementIds: new Set(), velocity: 0 },
-    gamePhase: state.targetPuzzle ? 'active' : 'idle',
-  })),
+    gamePhase: 'idle',
+  }),
 
   updateSettings: (s) => set(state => ({
     settings: { ...state.settings, ...s },
