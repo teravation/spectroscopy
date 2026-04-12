@@ -552,7 +552,7 @@ def main():
     out_path = Path(args.output)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with open(out_path, "w", encoding="utf-8") as f:
-        json.dump(output, f, separators=(",", ":"))
+        json.dump(output, f, indent=2)
 
     size_kb = out_path.stat().st_size / 1024
     print(f"\nWrote {out_path} ({size_kb:.0f} KB)")
