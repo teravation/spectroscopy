@@ -30,14 +30,16 @@ export function PeriodicTable({ elements, selectedIds, onToggle, maxRow, overlay
           </div>
         )}
         {visible.map(e => {
-          const color = selectedIds.has(e.atomicNumber) ? '#ffff00' : '#ffffff'
+          const hasLines = e.lines.length > 0
+          const isSelected = selectedIds.has(e.atomicNumber)
+          const color = isSelected ? '#ffff00' : hasLines ? '#ffffff' : '#333333'
           return (
             <div
               key={e.atomicNumber}
-              role="button"
-              tabIndex={0}
-              onClick={() => onToggle(e.atomicNumber)}
-              onKeyDown={ev => { if (ev.key === 'Enter' || ev.key === ' ') onToggle(e.atomicNumber) }}
+              role={hasLines ? 'button' : undefined}
+              tabIndex={hasLines ? 0 : undefined}
+              onClick={hasLines ? () => onToggle(e.atomicNumber) : undefined}
+              onKeyDown={hasLines ? ev => { if (ev.key === 'Enter' || ev.key === ' ') onToggle(e.atomicNumber) } : undefined}
               onMouseEnter={() => setHoveredName(e.name)}
               onMouseLeave={() => setHoveredName('')}
               style={{
@@ -45,11 +47,12 @@ export function PeriodicTable({ elements, selectedIds, onToggle, maxRow, overlay
                 gridRow: elementGridRow(e.row),
                 gridColumn: e.col,
                 color,
+                cursor: hasLines ? 'pointer' : 'default',
                 // box-shadow extends outside the cell — adjacent cells' shadows
                 // overlap at the shared edge, producing a single visible line
                 boxShadow: `0 0 0 1px #ffffff`,
               }}
-              aria-pressed={selectedIds.has(e.atomicNumber)}
+              aria-pressed={hasLines ? isSelected : undefined}
               aria-label={e.name}
             >
               <span className="pt-number">{e.atomicNumber}</span>

@@ -24,7 +24,7 @@ Phase status, open tasks, and verification checklist. Architecture decisions and
 - [x] Layout condensation: game controls (buttons + Emission/Absorption toggle) moved into the PT empty space (cols 3–12, rows 1–3); message area fixed-height (no layout shift); page title → "Spectroscopy"; favicon.ico added.
 - [x] Doppler slider tick marks at labeled positions (−100, −75, −50, −25, 0, +25, +50, +75, +100). CSS overlay preferred over native `<datalist>` for cross-browser consistency.
 - [x] Absorption mode shows black canvas when no elements selected — fixed early-return guard to allow rainbow continuum to render.
-- [ ] Zero-line elements: exclude from puzzle generation pool (puzzleFactory already filters `e.lines.length > 0` but elements.json may include entries below display threshold — audit and drop or raise floor).  We'll also want to visually distinguish these elements as we probably also don't want to be able to click on them, since they won't do anything anyway.
+- [x] Zero-line elements: excluded from puzzle generation pool (`e.lines.length > 0` filter in puzzleFactory). In PeriodicTable, elements with no lines render dimmed (#333 text + border) with no click handler, pointer, role, or aria-pressed — visually inert.
 - [x] Message area layout shift: fixed — message area is now a fixed-height container with absolutely-positioned text.
 
 ### Phase 2 — Polish
