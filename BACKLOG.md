@@ -19,29 +19,15 @@ Phase status, open tasks, and verification checklist. Architecture decisions and
 - [x] Deploy to S3 + CloudFront; verify elements.json loads and spectra render
 
 ### Phase 1a — Additions and fixes post-launch
-- [ ] Air/vacuum wavelength toggle in UI (near Emission/Absorption toggle). Store air wavelengths as canonical; convert to vacuum at render time using Edlén formula. Toggle state lives in Zustand store (`useVacuumWavelengths: boolean`). Doppler shift is applied first (in air), then converted for display. Puzzle answer checking always uses air wavelengths regardless of toggle.
+- [x] Air/vacuum wavelength toggle in UI (near Emission/Absorption toggle). Vacuum is canonical in elements.json (NIST `show_av=3`); vacuumToAir() (Edlén formula) applied at render time when Air is selected. Vacuum/Air radio group in GameControls, defaulting to Vacuum. Doppler shift operates in vacuum; conversion to air is display-only.
 - [x] Periodic table layout: Lu/Lr moved to main body group 3 (rows 6/7, col 3, under Sc/Y); La/Ac stay at start of f-block rows (rows 9/10, col 3); Ce–Yb and Th–No at cols 4–16; d-block (Hf–At, Rf–Ts) corrected to cols 4–17 (was off by +1 due to old script placing both La and Lu in main body).
 - [x] Layout condensation: game controls (buttons + Emission/Absorption toggle) moved into the PT empty space (cols 3–12, rows 1–3); message area fixed-height (no layout shift); page title → "Spectroscopy"; favicon.ico added.
 - [x] Doppler slider tick marks at labeled positions (−100, −75, −50, −25, 0, +25, +50, +75, +100). CSS overlay preferred over native `<datalist>` for cross-browser consistency.
 - [x] Absorption mode shows black canvas when no elements selected — fixed early-return guard to allow rainbow continuum to render.
-- [ ] Zero-line elements: exclude from puzzle generation pool (puzzleFactory already filters `e.lines.length > 0` but elements.json may include entries below display threshold — audit and drop or raise floor).
+- [ ] Zero-line elements: exclude from puzzle generation pool (puzzleFactory already filters `e.lines.length > 0` but elements.json may include entries below display threshold — audit and drop or raise floor).  We'll also want to visually distinguish these elements as we probably also don't want to be able to click on them, since they won't do anything anyway.
 - [x] Message area layout shift: fixed — message area is now a fixed-height container with absolutely-positioned text.
 
-### Phase 2 — Educator URL sharing
-- [x] `PuzzleSettingsPanel.tsx` — component exists
-- [ ] Bidirectional URL param sync (changing settings updates URL; loading URL restores settings)
-- [ ] Pre-programmed puzzle support via `?elements=1,2,11&velocity=0.35`
-- [ ] Default settings panel: match original dialog defaults (min=1, max=2, rows=3, doppler=No)
-
-### Phase 3 — PWA + offline
-- [ ] Configure `vite-plugin-pwa`: pre-cache app shell, network-first cache for `elements.json` with offline fallback
-
-### Phase 4 — Branding + ads
-- [ ] `useBranding.ts` + `BrandingHeader.tsx` + CSS variables on `:root`
-- [ ] `AdSlot.tsx` — conditional AdSense loading
-- [ ] Test subdomain routing locally via `/etc/hosts`
-
-### Phase 5 — Polish
+### Phase 2 — Polish
 - [ ] **PT zoom toggle** — button (in bottom-left or bottom-right PT gap: rows 9–10, cols 1–2 or 17–18) that switches between fit-all view (current) and zoomed view (fixed ~44px cells, PT scrolls independently in both directions with `overflow: auto`). Fixes mobile touch targets. Works on desktop too for accessibility.
 - [ ] **Mobile layout** — when zoom is on, fix the header (spectra + slider + message) and make the PT fill remaining viewport height as a scroll container. Non-game controls (New Target, Settings) move to a ⋮ overflow menu to reclaim vertical space.
 - [ ] Keyboard navigation on periodic table (arrow keys move focus, Enter toggles, Tab to buttons)
@@ -60,6 +46,21 @@ Phase status, open tasks, and verification checklist. Architecture decisions and
 - [ ] Font sizing polish: cqw-based scaling needs tuning across breakpoints — symbols and atomic numbers should feel proportional at all screen sizes
 - [ ] First-visit tutorial overlay (dismissible, stored in `localStorage`)
 - [ ] Spectral line QA: compare rendered spectra against Ohio State reference images; tune INTENSITY_THRESHOLD and canvas range (consider extending left edge to ~3800 Å for Hε)
+
+### Phase 3 — Educator URL sharing
+- [x] `PuzzleSettingsPanel.tsx` — component exists
+- [ ] Bidirectional URL param sync (changing settings updates URL; loading URL restores settings)
+- [ ] Pre-programmed puzzle support via `?elements=1,2,11&velocity=0.35`
+- [ ] Default settings panel: match original dialog defaults (min=1, max=2, rows=3, doppler=No)
+
+### Phase 4 — PWA + offline
+- [ ] Configure `vite-plugin-pwa`: pre-cache app shell, network-first cache for `elements.json` with offline fallback
+
+### Phase 5 — Branding + ads
+- [ ] `useBranding.ts` + `BrandingHeader.tsx` + CSS variables on `:root`
+- [ ] `AdSlot.tsx` — conditional AdSense loading
+- [ ] Test subdomain routing locally via `/etc/hosts`
+
 
 ---
 

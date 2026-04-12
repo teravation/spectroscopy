@@ -1,24 +1,28 @@
 interface Props {
   gamePhase: 'idle' | 'active' | 'solved'
   isEmission: boolean
+  showVacuumWavelengths: boolean
   showSettings: boolean
   onNewTarget: () => void
   onCheck: () => void
   onHint: () => void
   onReset: () => void
   onEmissionChange: (emission: boolean) => void
+  onWavelengthTypeChange: (vacuum: boolean) => void
   onToggleSettings: () => void
 }
 
 export function GameControls({
   gamePhase,
   isEmission,
+  showVacuumWavelengths,
   showSettings,
   onNewTarget,
   onCheck,
   onHint,
   onReset,
   onEmissionChange,
+  onWavelengthTypeChange,
   onToggleSettings,
 }: Props) {
   const hasTarget = gamePhase !== 'idle'
@@ -61,6 +65,26 @@ export function GameControls({
               onChange={() => onEmissionChange(false)}
             />
             Absorption
+          </label>
+        </div>
+        <div style={styles.radioGroup}>
+          <label style={styles.radioLabel}>
+            <input
+              type="radio"
+              name="wavelengthType"
+              checked={showVacuumWavelengths}
+              onChange={() => onWavelengthTypeChange(true)}
+            />
+            Vacuum
+          </label>
+          <label style={styles.radioLabel}>
+            <input
+              type="radio"
+              name="wavelengthType"
+              checked={!showVacuumWavelengths}
+              onChange={() => onWavelengthTypeChange(false)}
+            />
+            Air
           </label>
         </div>
         <button style={styles.button} onClick={onReset}>

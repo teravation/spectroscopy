@@ -69,7 +69,7 @@ NIST_PARAMS_BASE = {
     "show_calc_wl": "1",       # Ritz wavelength as fallback for wavelength only
     "unc_out": "1",
     "order_out": "0",
-    "show_av": "2",            # AIR wavelengths — critical, see ELEMENTS.md
+    "show_av": "3",            # VACUUM wavelengths — canonical, see ELEMENTS.md
     "A_out": "1",              # Einstein A coefficient (Aki) — cross-element comparable
     "intens_out": "on",        # also fetch NIST relative intensity for anchor scaling
     "allowed_out": "1",
@@ -267,8 +267,8 @@ def fetch_element(symbol: str, debug_dir: Path | None = None) -> list[dict]:
             idx = col.get(name)
             return cols[idx].strip().strip('"') if idx is not None and idx < len(cols) else ""
 
-        obs_wl  = get("obs_wl_air(A)")
-        ritz_wl = get("ritz_wl_air(A)")
+        obs_wl  = get("obs_wl_vac(A)")
+        ritz_wl = get("ritz_wl_vac(A)")
 
         wl_str = obs_wl if obs_wl else ritz_wl
         wl = _parse_float(wl_str)
@@ -448,7 +448,7 @@ def build_output(lines_by_z: dict[int, list[dict]]) -> dict:
     return {
         "version": datetime.now(timezone.utc).strftime("%Y-%m"),
         "generatedAt": datetime.now(timezone.utc).isoformat(),
-        "wavelengthType": "air",
+        "wavelengthType": "vacuum",
         "intensityScale": "aki-normalized-1000",  # Aki-equivalent, global max = 1000
         "elements": elements,
     }
@@ -458,12 +458,12 @@ def build_output(lines_by_z: dict[int, list[dict]]) -> dict:
 # ---------------------------------------------------------------------------
 
 KNOWN_LINES = {
-    # element: [(wavelength_air_Å, description)]
+    # element: [(wavelength_vacuum_Å, description)]
     # Only include lines bright enough to clear INTENSITY_THRESHOLD after normalization.
-    "H":  [(6562.8, "Hα"), (4861.3, "Hβ"), (4340.5, "Hγ"), (4101.7, "Hδ"), (3970.1, "Hε")],
-    "Na": [(5889.95, "Na D2"), (5895.92, "Na D1")],
-    "Ne": [(6402.2, "Ne"), (6678.3, "Ne"), (7032.4, "Ne")],
-    "He": [(5875.6, "He"), (4471.5, "He"), (6678.2, "He")],
+    "H":  [(6564.6, "Hα"), (4862.7, "Hβ"), (4341.7, "Hγ"), (4102.9, "Hδ"), (3971.2, "Hε")],
+    "Na": [(5891.6, "Na D2"), (5897.6, "Na D1")],
+    "Ne": [(6403.4, "Ne"), (6680.1, "Ne"), (7034.3, "Ne")],
+    "He": [(5877.2, "He"), (4472.7, "He"), (6680.0, "He")],
 }
 
 def validate(output: dict) -> bool:

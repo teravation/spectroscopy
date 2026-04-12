@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import type { Element, Puzzle, PuzzleSettings, CheckResult, HintResult } from '../physics/types'
 import { generatePuzzle } from '../physics/puzzleFactory'
 import { shiftLines } from '../physics/doppler'
+import { vacuumToAir } from '../physics/wavelength'
 
 // Default settings match the original Java applet init()
 const DEFAULT_SETTINGS: PuzzleSettings = {
@@ -16,6 +17,7 @@ interface GameState {
   targetPuzzle: Puzzle | null
   working: { elementIds: Set<number>; velocity: number }
   isEmission: boolean
+  showVacuumWavelengths: boolean  // true = vacuum (default); false = air
   gamePhase: 'idle' | 'active' | 'solved'
   settings: PuzzleSettings
 
@@ -29,6 +31,7 @@ interface GameState {
   toggleElement: (atomicNumber: number) => void
   setVelocity: (v: number) => void
   setEmissionMode: (emission: boolean) => void
+  setShowVacuumWavelengths: (vacuum: boolean) => void
   checkAnswer: () => CheckResult
   getHint: () => HintResult
   resetWorking: () => void
@@ -40,24 +43,27 @@ export const useGameStore = create<GameState>((set, get) => ({
   targetPuzzle: null,
   working: { elementIds: new Set(), velocity: 0 },
   isEmission: true,
+  showVacuumWavelengths: true,
   gamePhase: 'idle',
   settings: DEFAULT_SETTINGS,
 
   targetLines: () => {
-    const { targetPuzzle } = get()
+    const { targetPuzzle, showVacuumWavelengths } = get()
     if (!targetPuzzle) return []
     const allLines = targetPuzzle.targetElements.flatMap(e => e.lines)
-    return shiftLines(allLines, targetPuzzle.targetVelocity)
-      .sort((a, b) => a.w - b.w)
+    const shifted = shiftLines(allLines, targetPuzzle.targetVelocity)
+    const display = showVacuumWavelengths ? shifted : shifted.map(l => ({ w: vacuumToAir(l.w), i: l.i }))
+    return display.sort((a, b) => a.w - b.w)
   },
 
   workingLines: () => {
-    const { elements, working } = get()
+    const { elements, working, showVacuumWavelengths } = get()
     if (!elements) return []
     const selected = elements.filter(e => working.elementIds.has(e.atomicNumber))
     const allLines = selected.flatMap(e => e.lines)
-    return shiftLines(allLines, working.velocity)
-      .sort((a, b) => a.w - b.w)
+    const shifted = shiftLines(allLines, working.velocity)
+    const display = showVacuumWavelengths ? shifted : shifted.map(l => ({ w: vacuumToAir(l.w), i: l.i }))
+    return display.sort((a, b) => a.w - b.w)
   },
 
   loadElements: (elements) => set({ elements }),
@@ -85,6 +91,8 @@ export const useGameStore = create<GameState>((set, get) => ({
   })),
 
   setEmissionMode: (isEmission) => set({ isEmission }),
+
+  setShowVacuumWavelengths: (vacuum) => set({ showVacuumWavelengths: vacuum }),
 
   checkAnswer: () => {
     const { targetPuzzle, working } = get()

@@ -12,9 +12,9 @@ import { SAMPLE_ELEMENTS } from './data/sampleElements'
 
 export function App() {
   const {
-    targetPuzzle, working, isEmission, gamePhase, settings,
+    targetPuzzle, working, isEmission, showVacuumWavelengths, gamePhase, settings,
     loadElements, generateNewPuzzle, toggleElement,
-    setVelocity, setEmissionMode, checkAnswer, getHint, resetWorking,
+    setVelocity, setEmissionMode, setShowVacuumWavelengths, checkAnswer, getHint, resetWorking,
     targetLines, workingLines, updateSettings,
   } = useGameStore()
 
@@ -80,12 +80,14 @@ export function App() {
           <GameControls
             gamePhase={gamePhase}
             isEmission={isEmission}
+            showVacuumWavelengths={showVacuumWavelengths}
             showSettings={showSettings}
             onNewTarget={handleNewTarget}
             onCheck={handleCheck}
             onHint={handleHint}
             onReset={handleReset}
             onEmissionChange={setEmissionMode}
+            onWavelengthTypeChange={setShowVacuumWavelengths}
             onToggleSettings={() => setShowSettings(s => !s)}
           />
         }

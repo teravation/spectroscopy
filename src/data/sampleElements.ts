@@ -8,8 +8,8 @@ import type { Element } from '../physics/types'
 // we remap to row 9/10 to match the visual gap convention in PeriodicTable.tsx.
 
 export const SAMPLE_ELEMENTS: Element[] = [
-  { atomicNumber: 1,   symbol: 'H',   name: 'Hydrogen',        period: 1, group: 1,  row: 1,  col: 1,  lines: [{ w: 4101.8, i: 83 }, { w: 4340.5, i: 167 }, { w: 4861.4, i: 444 }, { w: 6562.7, i: 667 }, { w: 6562.9, i: 1000 }] },
-  { atomicNumber: 2,   symbol: 'He',  name: 'Helium',           period: 1, group: 18, row: 1,  col: 18, lines: [{ w: 4471.5, i: 400 }, { w: 5875.6, i: 1000 }, { w: 6678.2, i: 300 }] },
+  { atomicNumber: 1,   symbol: 'H',   name: 'Hydrogen',        period: 1, group: 1,  row: 1,  col: 1,  lines: [{ w: 4102.9, i: 83 }, { w: 4341.7, i: 167 }, { w: 4862.7, i: 444 }, { w: 6564.5, i: 667 }, { w: 6564.7, i: 1000 }] },
+  { atomicNumber: 2,   symbol: 'He',  name: 'Helium',           period: 1, group: 18, row: 1,  col: 18, lines: [{ w: 4472.7, i: 400 }, { w: 5877.2, i: 1000 }, { w: 6680.0, i: 300 }] },
   { atomicNumber: 3,   symbol: 'Li',  name: 'Lithium',          period: 2, group: 1,  row: 2,  col: 1,  lines: [] },
   { atomicNumber: 4,   symbol: 'Be',  name: 'Beryllium',        period: 2, group: 2,  row: 2,  col: 2,  lines: [] },
   { atomicNumber: 5,   symbol: 'B',   name: 'Boron',            period: 2, group: 13, row: 2,  col: 13, lines: [] },
@@ -18,7 +18,7 @@ export const SAMPLE_ELEMENTS: Element[] = [
   { atomicNumber: 8,   symbol: 'O',   name: 'Oxygen',           period: 2, group: 16, row: 2,  col: 16, lines: [] },
   { atomicNumber: 9,   symbol: 'F',   name: 'Fluorine',         period: 2, group: 17, row: 2,  col: 17, lines: [] },
   { atomicNumber: 10,  symbol: 'Ne',  name: 'Neon',             period: 2, group: 18, row: 2,  col: 18, lines: [] },
-  { atomicNumber: 11,  symbol: 'Na',  name: 'Sodium',           period: 3, group: 1,  row: 3,  col: 1,  lines: [{ w: 5889.9, i: 1000 }, { w: 5895.9, i: 500 }] },
+  { atomicNumber: 11,  symbol: 'Na',  name: 'Sodium',           period: 3, group: 1,  row: 3,  col: 1,  lines: [{ w: 5891.6, i: 1000 }, { w: 5897.6, i: 500 }] },
   { atomicNumber: 12,  symbol: 'Mg',  name: 'Magnesium',        period: 3, group: 2,  row: 3,  col: 2,  lines: [] },
   { atomicNumber: 13,  symbol: 'Al',  name: 'Aluminum',         period: 3, group: 13, row: 3,  col: 13, lines: [] },
   { atomicNumber: 14,  symbol: 'Si',  name: 'Silicon',          period: 3, group: 14, row: 3,  col: 14, lines: [] },

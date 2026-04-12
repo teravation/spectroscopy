@@ -101,22 +101,23 @@ Simpler approximation (accurate to ~0.05 Å in the visible):
 
 ### For the v2 app
 
-Store **both** in the JSON, or store one and compute the other at runtime. The v2 spec calls for a UI toggle between air and vacuum display. Recommendation: **store air wavelengths as the canonical value** (matches v1 data, matches what observers measure at sea level) and convert to vacuum on the fly when the toggle is set.
+**Store vacuum wavelengths as canonical** — vacuum is the physical standard and what modern databases (including NIST) use as their primary value. The UI toggle converts to air at render time using `vacuumToAir()`. This lives in `src/physics/wavelength.ts`.
 
-Conversion at render time is trivial and avoids bloating the JSON:
+Fetch vacuum from NIST with `show_av=3`; the response columns are `obs_wl_vac(A)` and `ritz_wl_vac(A)`.
+
+Conversion at render time (see `src/physics/wavelength.ts`):
 
 ```typescript
-function airToVacuum(wl: number): number {
-  const sigma = 10000 / wl;
-  const n = 1 + 8.34213e-5 + 2.40603e-2 / (130 - sigma * sigma) + 1.5997e-4 / (38.9 - sigma * sigma);
-  return wl * n;
-}
-
-function vacuumToAir(wl: number): number {
-  // Iterative or approximation; simple version:
-  return wl / 1.0002929;
+// Edlén 1966 — accurate to ~0.01 Å in the visible
+function vacuumToAir(lambdaVac: number): number {
+  const sigma = 1e4 / lambdaVac;  // μm⁻¹
+  const s2 = sigma * sigma;
+  const n = 1 + 8.34213e-5 + 2.40603e-2 / (130 - s2) + 1.5997e-4 / (38.9 - s2);
+  return lambdaVac / n;
 }
 ```
+
+Doppler shift is applied first (in vacuum), then `vacuumToAir()` is applied if the user has selected air display. Puzzle answer checking (element IDs + velocity) is wavelength-system-agnostic.
 
 ---
 
@@ -327,25 +328,21 @@ In the v1 `elements.xml`, element 26 was mislabeled `symbol="Fr"` (Francium) ins
 
 ## UI: Air vs Vacuum Toggle
 
-Add a toggle to the v2 game UI (suggested placement: near the Emission/Absorption toggle). When switched to vacuum, apply `airToVacuum()` to all rendered wavelengths before mapping to canvas X position — do not alter the stored data.
+Implemented. Air/Vacuum radio group lives next to the Emission/Absorption toggle in `GameControls.tsx`. State is `showVacuumWavelengths: boolean` (default `false` = show air) in the Zustand store.
 
 ```typescript
-// In the Zustand store
-useVacuumWavelengths: boolean;
-toggleWavelengthType: () => void;
+// In the Zustand store (gameStore.ts)
+showVacuumWavelengths: boolean;          // false = air (default)
+setShowVacuumWavelengths: (v: boolean) => void;
 
-// In SpectrumCanvas render logic
-const wl = state.useVacuumWavelengths ? airToVacuum(line.w) : line.w;
-const x = wavelengthToX(wl, canvasWidth);  // maps 4000–7000 Å → 0–width
+// In targetLines() / workingLines() selectors
+const shifted = shiftLines(allLines, velocity);   // Doppler in vacuum
+const display = showVacuumWavelengths
+  ? shifted
+  : shifted.map(l => ({ w: vacuumToAir(l.w), i: l.i }));
 ```
 
-The Doppler shift is applied before the air/vacuum conversion:
-```typescript
-const shifted = line.w * (1 + velocity);  // Doppler in air wavelengths
-const display = state.useVacuumWavelengths ? airToVacuum(shifted) : shifted;
-```
-
-For the puzzle solver: element matching and velocity checking are done against stored (air) wavelengths regardless of the display toggle — the toggle is purely cosmetic.
+For the puzzle solver: element matching and velocity checking are done by comparing element IDs and velocity values — no wavelength comparisons involved — so the toggle has no effect on correctness checking.
 
 ---
 
