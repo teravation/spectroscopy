@@ -304,22 +304,87 @@ Use cases summary:
 
 ### Fetch script
 
-`scripts/fetch_elements.py` (Python + `requests`, not bundled in app). Re-run whenever NIST data is refreshed or a new element is added.
+`scripts/fetch_elements.py` (Python + `requests`, not bundled in app). Re-run whenever NIST data is refreshed or a new element is added. Supports two-phase operation:
 
-- Queries the [NIST Atomic Spectra Database](https://physics.nist.gov/PhysRefData/ASD/lines_form.html) in wavelength chunks (3800–5800, 5800–7800, 7800–10000 Å)
-- Parses tab-delimited response: strips intensity suffixes, obs→Ritz fallback, deduplicates on wavelength
-- Filters intensity ≤ 50 (invisible at modern NIST scale) to keep file size reasonable
-- Merges with element metadata (name, period, group, row, col) from a hardcoded table — this never changes for known elements
-- Outputs `elements.json` with air wavelengths and modern intensity scale documented in the header
+```bash
+# Full fetch + save raw cache (~10 min, be polite to NIST):
+python fetch_elements.py --save-raw data/nist_raw.json
+
+# Transform-only from cache (seconds — use this when iterating on thresholds/normalization):
+python fetch_elements.py --from-raw data/nist_raw.json
+```
+
+### Intensity methodology — Aki-based global normalization
+
+The NIST `intens` (relative intensity) field has no common scale across elements — NIST's own documentation states it is meaningful "only within a given spectrum." To enable cross-element brightness comparison (required for the game), we use the **Einstein A coefficient (Aki, s⁻¹)** instead.
+
+Aki is the spontaneous emission rate for a transition — the number of photons emitted per excited atom per second. It is an intrinsic quantum mechanical property of the transition, independent of experimental conditions, and is directly comparable across elements and across labs.
+
+**Processing steps:**
+
+1. **Visible-range anchor:** For each element, compute `k = median(Aki / intens)` using only lines in the 4000–7000 Å visible range. Restricting to visible range prevents UV transitions (high Aki but low population in discharge lamps at moderate temperatures) from distorting the scale for visible lines — e.g. Na has strong UV lines at 3882 Å with high Aki, but the D lines at 5890 Å dominate visually; visible-range anchors correctly preserve that hierarchy. Falls back to all-wavelength anchors if no visible anchors exist.
+
+2. **Display intensity:** For lines with `intens`: `i = max(intens * k, Aki)`. The `intens * k` term gives the correct intra-element visual shape scaled to Aki-equivalent units. The `max(..., Aki)` floor prevents lines with very small `intens` values (e.g. rel=5) from being suppressed below their physically significant Aki contribution.
+
+3. **Lines with no `intens`:** Use Aki directly.
+
+4. **No Aki anchors at all (Ritz-only elements):** Normalize `intens` so the element's max maps to `FALLBACK_MAX_AKI = 1e8`, preserving the spectral fingerprint shape.
+
+5. **Ritz fallback:** Elements with no observed lines in range (`line_out=1` returns nothing or HTML) are re-queried with `line_out=0` to include Ritz-calculated (theoretical) lines. Ritz lines are derived from measured energy levels and are physically valid for educational use.
+
+6. **Global normalization:** All intensities are scaled so the 99th-percentile Aki across all elements maps to `OUTPUT_MAX=1000`. Outlier values (top 1%) are clamped to 1000 — they're just "very bright." This preserves cross-element comparability while preventing a handful of extreme transitions from compressing the bulk of lines to near-zero.
+
+7. **Threshold:** After normalization, lines below `INTENSITY_THRESHOLD_OBSERVED=7` (observed elements) or `INTENSITY_THRESHOLD_RITZ=1` (Ritz-fallback elements) are dropped. These thresholds are intentionally different: Ritz-normalized elements land much lower on the global scale, so a more permissive threshold is needed to preserve their fingerprints.
+
+**Why not `intens` alone:** The old Java app used `intens` directly with no cross-element normalization. It worked because the game relied on line *positions* for identification, not cross-element brightness. The new app uses Aki so that elements that are genuinely brighter (higher emission rates) appear brighter, making the spectra physically meaningful and not just fingerprint maps.
+
+**Why the v1 dataset worked despite using `intens`:** The original v1 data was fetched from a 2003 NIST API endpoint (`display.ksh`) that no longer exists. That API almost certainly drew from a single curated compilation — likely the *NIST Atomic Spectra Handbook* — where intensities were normalized to a consistent cross-element scale before publication. This is why v1 Hydrogen looked brighter than v1 Neon without any normalization code: the source data already had cross-element consistency baked in. The modern public ASD API aggregates data from hundreds of independent measurement campaigns with different instruments and calibration standards, so that consistency no longer exists in the raw `intens` field.
+
+The v1 vs modern NIST intensity scale comparison (approximate, for context):
+
+| Element | v1 XML max intensity | Modern NIST raw max | Notes |
+|---|---|---|---|
+| Ne | ~80,000 | ~800,000 | ~10× higher in modern API |
+| Mn | ~27,000 | ~270,000 | ~10× — consistent with Ne/Co |
+| Co | ~21,000 | ~210,000 | ~10× — consistent |
+| Fe | *(missing in v1)* | ~25,000,000 | ~1000× vs Ne/Mn/Co — different source paper |
+
+The 10× factor is consistent for Ne/Mn/Co, but Fe's modern NIST data comes from a different higher-precision source and is another 100× higher than those. There is no single divisor that brings all elements onto the same cross-element scale — which is exactly why Aki is the correct solution.
+
+**Known v1 data bug — Iron mislabeled as Francium:** In the original `elements.xml`, element 26 (Iron) had `symbol="Fr"` (Francium) and an empty `<spectralLines>` block — the data was never populated when the file was generated in 2003. This is why the original app had no Iron spectrum. Both bugs (wrong symbol, missing lines) were fixed in April 2025 when the v2 pipeline was written.
+
+### Why this model is physically correct
+
+Our model is appropriate for **stellar spectroscopy** — the game's actual context. In a stellar atmosphere or hot plasma:
+
+- The temperature is high enough to populate a wide range of excited states
+- All elements are present simultaneously in the same environment
+- The relative brightness of lines from different elements is governed directly by Aki weighted by excited-state populations (Boltzmann distribution at that temperature)
+- Cross-element intensity comparison is not just valid — it's essential
+
+An **iron-rich stellar spectrum** genuinely looks like our iron spectrum: hundreds of lines densely packed across the visible, often overwhelming other elements. That's exactly why astronomers need spectrographs and pattern-matching — the iron "forest" is a real observational challenge.
+
+A **museum discharge tube** is a different scenario: low current, low temperature, one element per tube, each tube optimized for its own element. In that context, per-element relative display makes sense because you're never comparing across elements simultaneously. Our model would be misleading for comparing tube-to-tube brightness, but that's not the game's use case.
+
+**The exception — Iodine:** Iodine's strongest atomic lines are in the near-IR (8000–10000 Å). Its visible-range atomic emission is sparse (4–5 lines in the canvas window). An iodine discharge tube appears to have a rich visible spectrum, but most of that is **molecular I₂ emission** — dense electronic band transitions from the diatomic molecule, not atomic line emission. NIST ASD contains only atomic line data, so our sparse Iodine visible spectrum is physically correct for atomic I; it will not match a discharge tube photo.
+
+### Procedure
+
+- Per-element queries (one NIST request per element, 2 s delay to be polite to NIST servers)
+- Wavelength range: 3800–10000 Å (vacuum), `show_av=3`
+- Parses tab-delimited response: strips intensity suffixes (`h`, `l`, `bl`, etc.), obs→Ritz fallback on HTML response, deduplicates on wavelength preferring higher `intens`
+- Merges with element metadata (name, period, group, row, col) from hardcoded table in script
+- Outputs `public/elements.json` (vacuum wavelengths, ~800 KB uncompressed)
+- Also uploaded to `s3://spectroscopy-assets/data/elements.json` via CI pipeline
 
 ### JSON Schema
 
 ```typescript
 interface ElementsDataFile {
-  version: string;              // e.g. "2025-01" — bump on NIST data refresh
+  version: string;              // e.g. "2026-04" — bump on NIST data refresh
   generatedAt: string;          // ISO 8601 timestamp
-  wavelengthType: "air" | "vacuum";   // which convention lines[] uses (store air, display either)
-  intensityScale: "nist-2025" | "nist-2003";  // 2025 scale is 10× higher than 2003
+  wavelengthType: "vacuum";     // always vacuum; air conversion done in UI if needed
+  intensityScale: "aki-normalized-1000";  // global 99th-pct Aki = 1000
   elements: ElementRecord[];
 }
 
@@ -331,13 +396,11 @@ interface ElementRecord {
   group: number;           // 1–18, 0 for lanthanides/actinides
   row: number;             // 1–10 (visual row; 9=lanthanides, 10=actinides)
   col: number;             // 1–18 (visual column)
-  lines: Array<{ w: number; i: number }>; // wavelength (Å), intensity (shortened keys for size)
+  lines: Array<{ w: number; i: number }>; // wavelength (Å vacuum), intensity 0–1000
 }
 ```
 
-**Intensity scale note:** NIST intensity values are relative *within* each element — they are not comparable across elements (Mg's brightest line has raw intensity 45; Neon's is 1000+). The pipeline normalizes each element's intensities so its brightest line = 1000, then filters below `INTENSITY_THRESHOLD = 50` (i.e., lines dimmer than 5% of that element's peak are dropped). This makes the threshold meaningful for all elements uniformly and ensures every element with spectral data in range has at least one visible line.
-
-Estimated file size: ~200 KB uncompressed, ~50 KB gzipped. Easily cached.
+Lines are pre-sorted by wavelength ascending. Intensity is globally normalized: 1000 = 99th-percentile Aki across all elements. The renderer applies `log10(i - INTENSITY_THRESHOLD) / 2` to map to a [0,1] brightness scale, clamped to 1.
 
 ### S3 Layout
 
@@ -472,6 +535,22 @@ These details are easy to get wrong when porting from Java. Do not deviate from 
 | `ElementXMLReader.java` | `scripts/convert-elements.ts` | One-time data conversion, not shipped |
 
 Original Java source lives at `../src/` relative to this file (the v1 project root). Reference it for exact algorithm details, especially `SpectrumPanel.java` (rendering) and `SpectrumFactory.java` (puzzle generation loop).
+
+---
+
+---
+
+## Reference Spectra
+
+Use these for visual QA of the rendered spectra and intensity methodology. **All of these will differ from ours in predictable ways — see the notes.**
+
+| Reference | URL | How it differs from ours |
+|---|---|---|
+| Ohio State representative emission spectra | https://www.astronomy.ohio-state.edu/pogge.1/TeachRes/HandSpec/atoms.html | Also sourced from NIST ASD, but uses **per-element normalization**: each element's lines are thresholded as a fraction of *that element's own* maximum intensity, then rendered at uniform height (binary show/hide — no brightness variation). This makes Carbon show ~12 clean lines and Iron show many more, but the two cannot be compared in brightness. Our model is cross-element: Carbon's lines are genuinely dimmer than Iron's, and that's reflected in how they render. OSU's approach is useful for "what lines should I see within this element"; ours is useful for "how bright is this element relative to another." |
+| RIT photo mosaic of discharge lamps | http://spiff.rit.edu/classes/phys200/lectures/spectra/photo_mosaic.gif | Actual **photographs of discharge tubes** — real experimental data, not generated from NIST. Differences from ours: (1) only elements that work in low-current discharge tubes are shown (noble gases, Na, Hg — no transition metals); (2) intensity is the camera's response to the tube, which depends on tube current, pressure, and temperature, not Aki alone; (3) wavelength axis runs red→left (reversed from our canvas). Good sanity check for noble gases and alkali metals at the qualitative level. |
+| NIST Atomic Spectra Database | https://physics.nist.gov/PhysRefData/ASD/lines_form.html | Primary data source. The `intens` field in NIST is empirical and per-element only — NIST's own documentation says it is meaningful "only within a given spectrum." We use Aki (Einstein A coefficient) for cross-element intensity. |
+| HyperPhysics atomic spectra | http://hyperphysics.phy-astr.gsu.edu/hbase/quantum/atspect.html#c1 | Computer-generated from NIST data, per-element normalized. Good for checking which lines should dominate *within* an element. Sources disagree on some relative intensities (e.g. He's two red lines near 6562 Å and 6680 Å) due to differing excitation conditions — this is a known physics ambiguity, not an error in either source. |
+| HyperPhysics iodine discharge tube photo | http://hyperphysics.phy-astr.gsu.edu/hbase/quantum/modpic/iodinetube.jpg | Shows a **molecular iodine (I₂) discharge tube**, not atomic iodine. I₂ has dense electronic band transitions throughout the visible spectrum, giving it a rich purple/violet glow. Our data is atomic I from NIST ASD — correctly sparse in the visible (most strong atomic I lines are in the near-IR, 8000–10000 Å). The two are not comparable: molecular vs atomic emission are completely different physical processes. |
 
 ---
 

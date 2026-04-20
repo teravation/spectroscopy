@@ -46,6 +46,8 @@ Phase status, open tasks, and verification checklist. Architecture decisions and
 - [ ] Font sizing polish: cqw-based scaling needs tuning across breakpoints — symbols and atomic numbers should feel proportional at all screen sizes
 - [ ] First-visit tutorial overlay (dismissible, stored in `localStorage`)
 - [ ] Spectral line QA: compare rendered spectra against Ohio State reference images; tune INTENSITY_THRESHOLD and canvas range (consider extending left edge to ~3800 Å for Hε)
+- [ ] Once we move to some kind of menu, we'll want a menu item to show the last update date of the spectral dataset.
+- [ ] Once we move to some kind of menu, we'll want a menu item to show any/all licenses, copyright, etc.
 
 ### Phase 3 — Educator URL sharing
 - [x] `PuzzleSettingsPanel.tsx` — component exists
@@ -56,7 +58,17 @@ Phase status, open tasks, and verification checklist. Architecture decisions and
 ### Phase 4 — PWA + offline
 - [ ] Configure `vite-plugin-pwa`: pre-cache app shell, network-first cache for `elements.json` with offline fallback
 
-### Phase 5 — Branding + ads
+### Phase 5 — Science / About page
+- [ ] Public-facing "How it works" page (route `/about` or modal). Audience: curious players, teachers, museum visitors — not developers.
+  - What spectroscopy is and how astronomers use it to identify elements
+  - How the app models emission spectra: Aki (Einstein A coefficients), global cross-element normalization, why our spectra look different from discharge tube photos
+  - How Doppler shift works and what velocity tells you about a star
+  - Why elements like Iron are dense and overwhelming while Hydrogen is sparse — it's real physics
+  - Why Iodine looks sparse in the app but glows richly in a discharge tube (atomic I vs molecular I₂)
+  - External links: NIST ASD, OSU reference spectra, HyperPhysics, Wikipedia (Spectral line, Einstein coefficients, Doppler effect, Fraunhofer lines)
+  - Source: condense PROJECT.md physics sections; strip implementation details; add introductory framing for non-developer audience
+
+### Phase 6 — Branding + ads
 - [ ] `useBranding.ts` + `BrandingHeader.tsx` + CSS variables on `:root`
 - [ ] `AdSlot.tsx` — conditional AdSense loading
 - [ ] Test subdomain routing locally via `/etc/hosts`

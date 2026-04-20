@@ -7,7 +7,18 @@ Output is written to ../public/elements.json (served as a static asset).
 
 Usage:
     pip install -r requirements.txt
-    python fetch_elements.py [--output ../public/elements.json] [--dry-run]
+
+    # Full pipeline (fetch + transform):
+    python fetch_elements.py
+
+    # Save raw NIST data for fast re-runs (avoids 10-min refetch):
+    python fetch_elements.py --save-raw data/nist_raw.json
+
+    # Transform only from saved raw data:
+    python fetch_elements.py --from-raw data/nist_raw.json
+
+    # Other options:
+    python fetch_elements.py [--output ../public/elements.json] [--dry-run] [--debug]
 
 The reader counterpart is src/data/fetchElements.ts. If you change the JSON
 schema here, update the TypeScript types in src/physics/types.ts to match.
@@ -45,7 +56,15 @@ FALLBACK_MAX_AKI = 1e8
 # Final output scale: global max Aki across all elements maps to this value.
 # Matches INTENSITY_THRESHOLD in src/components/SpectrumCanvas.tsx (50/1000 = 5%).
 OUTPUT_MAX = 1000
-INTENSITY_THRESHOLD = 10   # lines below this after normalization are dropped (~1% of max)
+
+# Intensity thresholds after global normalization.
+# Observed elements (line_out=1) have physically calibrated Aki intensities —
+# threshold 10 cuts genuinely faint lines without losing the fingerprint.
+# Ritz-fallback elements (line_out=0) have no Aki values; their intensities are
+# normalized from relative intensity fields and land much lower on the global scale,
+# so a much lower threshold is needed to preserve their spectral fingerprints.
+INTENSITY_THRESHOLD_OBSERVED = 7
+INTENSITY_THRESHOLD_RITZ     = 1
 
 # Seconds between per-element requests — be polite to NIST.
 REQUEST_DELAY = 2.0
@@ -213,15 +232,19 @@ SYMBOL_TO_Z = {v[0]: k for k, v in ELEMENT_META.items()}
 # Fetching
 # ---------------------------------------------------------------------------
 
-def fetch_element(symbol: str, debug_dir: Path | None = None) -> list[dict]:
+def _fetch_nist_raw(symbol: str, line_out: int, debug_dir: Path | None = None) -> list[dict] | None:
     """
-    Fetch all spectral lines for one element from NIST ASD.
-    Returns list of {w, i} dicts (symbol already known from caller).
+    Make one NIST ASD request for a given symbol and line_out mode.
 
-    Per-element queries omit the 'element' and 'sp_num' columns — column
-    layout is detected dynamically from the header row.
+    line_out=1 → observed lines only (preferred: directly measured wavelengths)
+    line_out=0 → all lines including Ritz-calculated (fallback for elements with
+                 no observed lines in the visible range)
+
+    Returns a list of raw line dicts on success, or None if NIST returned an
+    HTML error page (meaning no data for this element/mode combination).
+    Raises on network errors after retries.
     """
-    params = {**NIST_PARAMS_BASE, "spectra": symbol}
+    params = {**NIST_PARAMS_BASE, "spectra": symbol, "line_out": str(line_out)}
     # NIST CGI requires form-style encoding: spaces as +, not %20.
     query = urllib.parse.urlencode(params, quote_via=urllib.parse.quote_plus)
 
@@ -231,24 +254,20 @@ def fetch_element(symbol: str, debug_dir: Path | None = None) -> list[dict]:
         resp.raise_for_status()
         if "<html" not in resp.text[:200].lower():
             break
-        z = SYMBOL_TO_Z.get(symbol, 0)
-        if z > 99:
-            return []  # no NIST data for superheavy elements — expected
-        if attempt == 0:
-            # line_out=1 returns an error page when an element has no directly
-            # observed lines in range (only theoretical Ritz-calculated lines).
-            # We only use observed data — return empty rather than falling back.
-            return []
+        # HTML on first attempt with line_out=1 means no observed lines in range —
+        # signal immediately so the caller can try Ritz without wasting retry delays.
+        if line_out == 1 and attempt == 0:
+            return None
         if attempt < REQUEST_RETRIES:
             print(f"  (HTML response for {symbol}, retrying in {REQUEST_RETRY_DELAY}s...)", end=" ", flush=True)
             time.sleep(REQUEST_RETRY_DELAY)
         else:
-            print(f"WARNING: NIST returned HTML for {symbol} (Z={z}) after {1+REQUEST_RETRIES} attempts")
-            return []
+            return None  # no data for this mode
 
     if debug_dir is not None:
         debug_dir.mkdir(parents=True, exist_ok=True)
-        raw_path = debug_dir / f"nist_raw_{symbol}.txt"
+        suffix = "obs" if line_out == 1 else "ritz"
+        raw_path = debug_dir / f"nist_raw_{symbol}_{suffix}.txt"
         raw_path.write_text(resp.text, encoding="utf-8")
 
     lines = []
@@ -290,6 +309,36 @@ def fetch_element(symbol: str, debug_dir: Path | None = None) -> list[dict]:
     return lines
 
 
+def fetch_element(symbol: str, debug_dir: Path | None = None) -> tuple[list[dict], bool]:
+    """
+    Fetch spectral lines for one element from NIST ASD.
+    Returns (raw_lines, used_ritz) where used_ritz indicates whether the Ritz
+    fallback was needed (line_out=0 rather than observed line_out=1).
+
+    Strategy: try observed lines only (line_out=1) first — these are directly
+    measured wavelengths. If NIST has no observed lines in the visible range,
+    fall back to Ritz-calculated lines (line_out=0). Ritz lines are derived
+    from known energy levels and are physically valid for educational use.
+    Superheavy elements (Z > 99) have no NIST data and are skipped.
+    """
+    z = SYMBOL_TO_Z.get(symbol, 0)
+    if z > 99:
+        return [], False  # no NIST data for superheavy elements — expected
+
+    lines = _fetch_nist_raw(symbol, line_out=1, debug_dir=debug_dir)
+
+    if lines is None:
+        # No observed lines in range — try Ritz-calculated lines as fallback.
+        print(f"ritz...", end=" ", flush=True)
+        time.sleep(REQUEST_DELAY)
+        lines = _fetch_nist_raw(symbol, line_out=0, debug_dir=debug_dir)
+        if lines is None:
+            return [], False
+        return lines, True
+
+    return lines, False
+
+
 def _parse_float(s: str) -> float | None:
     """Parse float including scientific notation; ignore non-numeric suffixes."""
     m = re.match(r"[\d.]+(?:[eE][+-]?\d+)?", s)
@@ -310,24 +359,33 @@ def _parse_int(s: str) -> int | None:
 
 def process_lines(raw_lines: list[dict], symbol: str = "?") -> list[dict]:
     """
-    Convert raw NIST lines to a unified intensity scale using Aki (Einstein A
-    coefficient, s⁻¹) as the primary value — cross-element physically comparable.
+    Convert raw NIST lines to a unified intensity scale combining:
+      - NIST relative intensity (rel/intens) for correct intra-element visual shape
+      - Aki (Einstein A coefficient) for cross-element brightness calibration
 
-    Strategy (anchor scaling, per ELEMENTS.md):
-    1. For lines with Aki: use Aki directly as intensity.
-    2. For lines with only relative intensity: compute a per-element scale factor
-       k = median(Aki / rel) from lines that have both, then i = rel * k.
-    3. If no anchor lines exist: normalize relative intensities so max = FALLBACK_MAX_AKI.
-
-    After scaling, deduplicate on wavelength (keep highest i), filter below
-    INTENSITY_THRESHOLD, and sort ascending.
+    Strategy:
+    1. Compute anchor scale factor k = median(Aki / rel) using only lines in the
+       visible range (ANCHOR_LOW–ANCHOR_HIGH Å). Restricting to visible range
+       prevents UV transitions (high Aki but low excitation population in discharge
+       lamps/stellar atmospheres) from distorting the scale for visible lines —
+       e.g. Na UV lines at 3882 Å have high Aki but the D lines at 5890 Å dominate
+       visually; using visible-range anchors correctly preserves that hierarchy.
+       Falls back to all-wavelength anchors if no visible anchors exist.
+    2. For lines with rel: display intensity = rel * k  (correct visual shape,
+       Aki-calibrated scale). Prefer rel over raw Aki for individual lines.
+    3. For lines with Aki but no rel: display intensity = Aki (best available).
+    4. If no Aki anchors at all: normalize rel so max = FALLBACK_MAX_AKI.
     """
     from statistics import median
+
+    # Visible range for anchor selection — where the eye (and the game canvas) is sensitive.
+    ANCHOR_LOW, ANCHOR_HIGH = 4000, 7000
 
     if not raw_lines:
         return []
 
-    # Deduplicate on wavelength, keeping the entry with the best Aki (or highest rel)
+    # Deduplicate on wavelength, preferring entries with rel data (for shape accuracy),
+    # breaking ties by higher rel value; keep Aki from whichever entry has it.
     wl_map: dict[float, dict] = {}
     for line in raw_lines:
         w = round(line["w"], 1)
@@ -335,38 +393,51 @@ def process_lines(raw_lines: list[dict], symbol: str = "?") -> list[dict]:
         if existing is None:
             wl_map[w] = line
         else:
-            # Prefer entries with Aki; break ties by higher value
-            if (line["aki"] or 0) > (existing["aki"] or 0):
-                wl_map[w] = line
-            elif line["aki"] is None and (line["rel"] or 0) > (existing["rel"] or 0):
-                wl_map[w] = existing  # keep existing if it has Aki or higher rel
+            # Prefer entry with higher rel (intens) — rel drives display intensity
+            new_rel = line["rel"] or 0
+            old_rel = existing["rel"] or 0
+            if new_rel > old_rel:
+                # Keep Aki from whichever entry has it
+                merged_aki = line["aki"] or existing["aki"]
+                wl_map[w] = {**line, "aki": merged_aki}
+            elif new_rel == old_rel and (line["aki"] or 0) > (existing["aki"] or 0):
+                wl_map[w] = line  # same rel, better Aki
 
     deduped = list(wl_map.values())
 
-    # Compute anchor scale factor k from lines that have both Aki and rel
-    anchor_lines = [l for l in deduped if l["aki"] and l["rel"]]
+    # Compute anchor k from visible-range lines first, fall back to all lines
+    visible_anchors = [l for l in deduped if l["aki"] and l["rel"]
+                       and ANCHOR_LOW <= l["w"] <= ANCHOR_HIGH]
+    all_anchors     = [l for l in deduped if l["aki"] and l["rel"]]
+    anchor_lines    = visible_anchors if visible_anchors else all_anchors
+
     if anchor_lines:
         ratios = [l["aki"] / l["rel"] for l in anchor_lines]
         k = median(ratios)
-        src = "anchor"
+        src = "anchor-visible" if visible_anchors else "anchor-all"
     else:
         k = None
-        src = "normalized"
-        if any(l["aki"] for l in deduped):
-            src = "aki-only"
+        src = "normalized" if not any(l["aki"] for l in deduped) else "aki-only"
 
-    # Assign unified intensity
+    # Assign display intensity
     result = []
     for line in deduped:
-        if line["aki"]:
+        if line["rel"] and k is not None:
+            # rel*k gives correct intra-element shape scaled to Aki-equivalent units.
+            # But for lines with very small rel values (e.g. rel=5), rel*k can fall
+            # well below what Aki alone would give, suppressing lines that are
+            # physically significant. Take max(rel*k, aki) to prevent this regression.
+            i_rel = line["rel"] * k
+            i_aki = line["aki"] if line["aki"] else 0
+            i = max(i_rel, i_aki)
+            line_src = "rel-anchored" if i_rel >= i_aki else "aki-floor"
+        elif line["aki"]:
+            # No rel data — Aki is the only option
             i = line["aki"]
             line_src = "aki"
-        elif k is not None and line["rel"]:
-            i = line["rel"] * k
-            line_src = "scaled"
         elif line["rel"]:
-            # No anchors — normalize relative intensities to FALLBACK_MAX_AKI
-            i = line["rel"]  # will normalize below
+            # No Aki anchors anywhere — normalize relative intensities
+            i = line["rel"]
             line_src = "normalized"
         else:
             continue
@@ -379,7 +450,6 @@ def process_lines(raw_lines: list[dict], symbol: str = "?") -> list[dict]:
             for l in result:
                 l["i"] = l["i"] / max_rel * FALLBACK_MAX_AKI
 
-    # Sort, keep internal _src for debugging, drop zero/negative
     output = [
         {"w": round(l["w"], 1), "i": l["i"]}
         for l in result
@@ -387,16 +457,18 @@ def process_lines(raw_lines: list[dict], symbol: str = "?") -> list[dict]:
     ]
     output.sort(key=lambda x: x["w"])
 
-    # Log a warning if anchor coverage is poor for a real element
-    n_aki = sum(1 for l in deduped if l["aki"])
+    # Diagnostic notes
     n_total = len(deduped)
-    if n_total > 0 and n_aki == 0 and n_total > 5:
-        print(f"  NOTE: {symbol} has no Aki values — using {src} normalization ({n_total} lines)")
+    if n_total > 5:
+        if not all_anchors:
+            print(f"  NOTE: {symbol} has no Aki values — using {src} normalization ({n_total} lines)")
+        elif not visible_anchors:
+            print(f"  NOTE: {symbol} has no visible-range Aki anchors — using all-range anchor")
 
-    return output  # intensities are in Aki-equivalent (s⁻¹) units, not yet normalized
+    return output  # intensities are in rel*k (≈ Aki-equivalent) units, not yet globally normalized
 
 
-def global_normalize(lines_by_z: dict[int, list[dict]]) -> dict[int, list[dict]]:
+def global_normalize(lines_by_z: dict[int, list[dict]], ritz_zs: set[int]) -> dict[int, list[dict]]:
     """
     Normalize all intensities to a 0–OUTPUT_MAX scale, then drop below threshold.
 
@@ -404,6 +476,11 @@ def global_normalize(lines_by_z: dict[int, list[dict]]) -> dict[int, list[dict]]
     absolute maximum — a handful of outlier transitions (e.g. high-gA Ne lines)
     would otherwise compress the bulk of lines into near-zero. Values above the
     99th percentile are clamped to OUTPUT_MAX; they're just "very bright".
+
+    Observed elements (line_out=1) use INTENSITY_THRESHOLD_OBSERVED.
+    Ritz-fallback elements (line_out=0) use INTENSITY_THRESHOLD_RITZ — their
+    intensities are normalized from relative fields and land much lower on the
+    global scale, so a more permissive threshold preserves their fingerprints.
     """
     all_intensities = sorted(
         line["i"] for lines in lines_by_z.values() for line in lines
@@ -418,11 +495,12 @@ def global_normalize(lines_by_z: dict[int, list[dict]]) -> dict[int, list[dict]]
 
     normalized: dict[int, list[dict]] = {}
     for z, lines in lines_by_z.items():
+        threshold = INTENSITY_THRESHOLD_RITZ if z in ritz_zs else INTENSITY_THRESHOLD_OBSERVED
         scaled = [
             {"w": l["w"], "i": min(OUTPUT_MAX, round(l["i"] / ref * OUTPUT_MAX))}
             for l in lines
         ]
-        normalized[z] = [l for l in scaled if l["i"] > INTENSITY_THRESHOLD]
+        normalized[z] = [l for l in scaled if l["i"] > threshold]
 
     return normalized
 
@@ -480,8 +558,8 @@ def validate(output: dict) -> bool:
             if not any(abs(w - target_wl) <= 1.0 for w in wls):
                 # Find nearest actual line to help diagnose offset or vacuum/air issue
                 nearest = min(wls, key=lambda w: abs(w - target_wl), default=None)
-                nearest_str = f" (nearest: {nearest:.1f} Å, Δ={nearest - target_wl:+.1f})" if nearest else ""
-                print(f"  WARN: {symbol} missing {desc} at {target_wl} Å{nearest_str}")
+                nearest_str = f" (nearest: {nearest:.1f}, d={nearest - target_wl:+.1f})" if nearest else ""
+                print(f"  WARN: {symbol} missing {desc} at {target_wl}{nearest_str}")
                 ok = False
     if ok:
         for symbol, known in KNOWN_LINES.items():
@@ -512,27 +590,91 @@ def main():
         action="store_true",
         help="Save raw NIST responses to ../data/ and print column layout",
     )
+    parser.add_argument(
+        "--save-raw",
+        metavar="PATH",
+        help="After fetching from NIST, save raw parsed line data to this JSON path "
+             "(e.g. data/nist_raw.json). Useful for iterating on transforms without refetching.",
+    )
+    parser.add_argument(
+        "--from-raw",
+        metavar="PATH",
+        help="Skip NIST fetch entirely; load raw line data from this JSON path "
+             "(produced by a prior --save-raw run). Transform-only mode.",
+    )
     args = parser.parse_args()
+
+    if args.from_raw and args.save_raw:
+        parser.error("--from-raw and --save-raw are mutually exclusive")
 
     debug_dir = Path(__file__).parent.parent / "data" if args.debug else None
 
-    print(f"Fetching spectral data from NIST ASD ({len(ELEMENT_META)} elements)...")
-    lines_by_z: dict[int, list[dict]] = {}
-    for idx, (z, meta) in enumerate(sorted(ELEMENT_META.items())):
-        symbol = meta[0]
-        print(f"  [{idx+1:3d}/{len(ELEMENT_META)}] {symbol:3s} ...", end=" ", flush=True)
-        raw = fetch_element(symbol, debug_dir=debug_dir)
-        processed = process_lines(raw, symbol=symbol)
-        lines_by_z[z] = processed
-        print(f"{len(processed)} lines" if processed else "(no data)")
-        if idx < len(ELEMENT_META) - 1:
-            time.sleep(REQUEST_DELAY)
+    if args.from_raw:
+        # -----------------------------------------------------------------------
+        # Transform-only mode: load cached raw data, skip all NIST requests.
+        # -----------------------------------------------------------------------
+        raw_path = Path(args.from_raw)
+        if not raw_path.is_absolute():
+            raw_path = raw_path.resolve()  # resolve relative to cwd
+        print(f"Loading raw NIST data from {raw_path} ...")
+        with open(raw_path, encoding="utf-8") as f:
+            raw_cache = json.load(f)
 
-    n_with_lines = sum(1 for v in lines_by_z.values() if v)
-    print(f"\nFetched {n_with_lines} elements with spectral data")
+        lines_by_z: dict[int, list[dict]] = {}
+        ritz_zs: set[int] = set()
+        for z_str, entry in raw_cache.items():
+            z = int(z_str)
+            symbol = ELEMENT_META[z][0]
+            raw = entry["lines"]
+            if entry.get("used_ritz"):
+                ritz_zs.add(z)
+            print(f"  [{z:3d}] {symbol:3s} ...", end=" ", flush=True)
+            processed = process_lines(raw, symbol=symbol)
+            lines_by_z[z] = processed
+            print(f"{len(processed)} lines" if processed else "(no data)")
+
+        n_with_lines = sum(1 for v in lines_by_z.values() if v)
+        print(f"\nLoaded {n_with_lines} elements with spectral data (from cache)")
+        print(f"  {len(ritz_zs)} used Ritz fallback: "
+              f"{', '.join(ELEMENT_META[z][0] for z in sorted(ritz_zs))}")
+    else:
+        # -----------------------------------------------------------------------
+        # Fetch mode: pull from NIST ASD, optionally save raw data.
+        # -----------------------------------------------------------------------
+        print(f"Fetching spectral data from NIST ASD ({len(ELEMENT_META)} elements)...")
+        lines_by_z = {}
+        ritz_zs = set()
+        raw_cache: dict[str, dict] = {}
+
+        for idx, (z, meta) in enumerate(sorted(ELEMENT_META.items())):
+            symbol = meta[0]
+            print(f"  [{idx+1:3d}/{len(ELEMENT_META)}] {symbol:3s} ...", end=" ", flush=True)
+            raw, used_ritz = fetch_element(symbol, debug_dir=debug_dir)
+            if used_ritz:
+                ritz_zs.add(z)
+            raw_cache[str(z)] = {"lines": raw, "used_ritz": used_ritz}
+            processed = process_lines(raw, symbol=symbol)
+            lines_by_z[z] = processed
+            print(f"{len(processed)} lines" if processed else "(no data)")
+            if idx < len(ELEMENT_META) - 1:
+                time.sleep(REQUEST_DELAY)
+
+        n_with_lines = sum(1 for v in lines_by_z.values() if v)
+        print(f"\nFetched {n_with_lines} elements with spectral data")
+        print(f"  {len(ritz_zs)} used Ritz fallback (threshold={INTENSITY_THRESHOLD_RITZ}): "
+              f"{', '.join(ELEMENT_META[z][0] for z in sorted(ritz_zs))}")
+
+        if args.save_raw:
+            raw_path = Path(args.save_raw)
+            if not raw_path.is_absolute():
+                raw_path = raw_path.resolve()  # resolve relative to cwd
+            raw_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(raw_path, "w", encoding="utf-8") as f:
+                json.dump(raw_cache, f, indent=2)
+            print(f"Saved raw NIST data to {raw_path}")
 
     print("Normalizing to global 0-1000 scale...")
-    lines_by_z = global_normalize(lines_by_z)
+    lines_by_z = global_normalize(lines_by_z, ritz_zs)
     total_kept = sum(len(v) for v in lines_by_z.values())
     print(f"Total lines after normalization + threshold filter: {total_kept}")
 

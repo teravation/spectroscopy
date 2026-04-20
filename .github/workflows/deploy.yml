@@ -37,6 +37,15 @@ jobs:
           aws s3 cp dist/index.html s3://spectroscopy-app/index.html \
             --cache-control "public, max-age=0, must-revalidate"
 
+      - name: Upload elements.json to assets bucket
+        run: |
+          aws s3 cp public/elements.json s3://spectroscopy-assets/data/elements.json \
+            --cache-control "public, max-age=86400" \
+            --content-type "application/json"
+          aws cloudfront create-invalidation \
+            --distribution-id E2TYGZ9XLZ0D35 \
+            --paths "/data/elements.json"
+
       - name: Invalidate CloudFront
         run: |
           aws cloudfront create-invalidation \

@@ -17,8 +17,17 @@ dist-ssr
 
 # Data pipeline scratch space (top-level only, not src/data/)
 /data/
+
+# UI snapshots (local reference only)
+/snapshots/
 __pycache__/
 *.pyc
+
+# Playwright MCP session scratch files
+.playwright-mcp/
+
+# Source files for generated assets (keep originals locally, not in repo)
+*.xcf
 
 # Editor directories and files
 .vscode/*
