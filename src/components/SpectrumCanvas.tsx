@@ -14,10 +14,9 @@ const INTENSITY_THRESHOLD = 10
 interface Props {
   lines: SpectralLine[]  // must be sorted by wavelength ascending
   isEmission: boolean
-  height?: number
 }
 
-export function SpectrumCanvas({ lines, isEmission, height = 150 }: Props) {
+export function SpectrumCanvas({ lines, isEmission }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
@@ -67,7 +66,7 @@ export function SpectrumCanvas({ lines, isEmission, height = 150 }: Props) {
   return (
     <canvas
       ref={canvasRef}
-      style={{ display: 'block', width: '100%', height }}
+      style={{ display: 'block', width: '100%', height: '100%' }}
     />
   )
 }

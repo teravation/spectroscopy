@@ -55,8 +55,9 @@ What changes in the reboot:
 - Fixed 800×600 → fully **responsive** layout (tablet, desktop, mobile)
 - Java Swing buttons/dialogs → clean modern equivalents with the same dark palette
 - Font defaults → explicit monospace/sans choices that read well on modern displays
-- The `SpectrumFactoryDialog` modal → an inline collapsible panel or popover (less disruptive UX)
-- Mobile: two spectrum canvases stacked, periodic table scrollable, larger touch targets
+- The `SpectrumFactoryDialog` modal → settings dialog triggered by "New Target" in the hamburger menu (matching the original Java applet flow — configure then generate)
+- All game controls (New Target, Check, Hint, Reset, Emission/Absorption, Vacuum/Air) moved into a persistent hamburger menu in the app header; the game surface is purely spectra + slider + periodic table
+- Mobile: spectrum canvases scale with viewport height; periodic table fits remaining space with a zoom toggle for minimum touch-target cells
 
 What stays the same:
 - Black canvas backgrounds
@@ -64,6 +65,99 @@ What stays the same:
 - Yellow highlight for selected elements
 - White cell borders on periodic table
 - Overall top-spectrum / bottom-table layout
+
+---
+
+## Responsive Layout Design
+
+### Layout stack (universal — no breakpoints)
+
+One layout for all viewports and orientations. No separate mobile/desktop templates.
+
+```
+┌──────────────────────────────┐
+│  AppHeader                   │  always visible, never scrolls
+│    branding row (44px)       │  logo/name left, ☰ right
+│    top ad slot (optional)    │  ~50px, only when !hideAds
+├──────────────────────────────┤
+│  Target spectrum canvas      │  height: max(70px, 20vh)
+│  Working spectrum canvas     │  height: max(70px, 20vh)
+│  Doppler slider + labels     │  ~60px
+├──────────────────────────────┤
+│  Periodic Table  (flex: 1)   │  fills all remaining viewport space
+│  [⊕/⊝]      element name    │  PT footer: zoom toggle + hover name
+├──────────────────────────────┤
+│  Bottom ad slot (optional)   │  larger ad; only renders when there's room
+└──────────────────────────────┘
+```
+
+### Canvas height sizing
+
+Each spectrum canvas: `height = max(70px, 20vh)`
+
+This scales naturally with device:
+
+| Device | 20vh | Result |
+|---|---|---|
+| Old phone portrait 375×667 | 133px | 133px per canvas |
+| iPhone portrait 390×844 | 169px | 169px per canvas |
+| iPhone landscape 390px tall | 78px | 78px per canvas |
+| iPad portrait 820×1180 | 236px | 236px per canvas |
+| Laptop 1080px tall | 216px | 216px per canvas |
+
+70px is the floor — canvases never shrink below a usable minimum.
+
+### Periodic table sizing
+
+The PT section takes all remaining height via `flex: 1`.
+
+**Fit mode (default):** PT cells scale to fill the available width and height. On wide screens with ample height, cells are large and comfortable. On narrow or short screens, cells shrink — still usable for mouse/keyboard, but may be too small for touch.
+
+**Zoom mode (⊕ toggle):** Cells expand to a fixed minimum touch-target size (~44px). The PT may extend beyond the viewport in either axis. The header and spectrum section become `position: sticky` so the spectra remain visible while the PT scrolls. A ⊝ button returns to fit mode.
+
+The zoom toggle lives in the PT footer row (left side), next to the element hover name.
+
+### Ad slots
+
+- **Top ad** (small, e.g. 320×50): child of `AppHeader`. Only rendered when `!hideAds`. Increases header height from 44px to ~94px when present.
+- **Bottom ad** (larger, e.g. 728×90 or 336×280): below the PT section. Only rendered when `!hideAds`. On small screens it gets no space and doesn't render; on tablets and desktops it appears naturally after the PT.
+
+### Control placement
+
+All game controls live in the hamburger menu (☰) in the app header — never on the game surface. The game surface is purely: spectra, Doppler slider, periodic table.
+
+The PT overlay pattern (controls embedded in the PT gap) is removed entirely. `PeriodicTable` has no `overlay` prop.
+
+### Hamburger menu contents
+
+All game controls live in the AppMenu drawer. The game surface (spectra + slider + PT) has no buttons.
+
+```
+☰ MENU
+────────────────────────────
+ ▶  New Target...            opens NewTargetDialog (settings + generate)
+ ✓  Check Answer             disabled when gamePhase === 'idle'
+ 💡 Hint                     disabled when gamePhase === 'idle'
+ ↺  Reset
+────────────────────────────
+ ● Emission  ○ Absorption
+ ● Vacuum    ○ Air
+────────────────────────────
+ ℹ  About / How It Works     (Phase 5)
+ 📅 Dataset: {version}       e.g. "April 2026"
+ ⚖  Licenses
+────────────────────────────
+```
+
+The menu closes after any action that starts or resets a game (New Target → Go, Reset). It stays open for toggle changes (Emission/Absorption, Vacuum/Air) so the user can adjust multiple settings in one session.
+
+### Reference screenshots
+
+Layout screenshots taken at multiple viewport sizes are stored in `/snapshots/` (gitignored, local reference only):
+- `desktop-1920x1080.png`, `tablet-portrait-820x1180.png`, `tablet-landscape-1180x820.png`
+- `phone-portrait-390x844.png`, `phone-landscape-844x390.png`
+- `oldphone-portrait-375x667.png`, `oldphone-landscape-667x375.png`
+- `reference-ohio-state.png` — OSU reference spectra for visual QA
 
 ---
 
@@ -169,14 +263,14 @@ spectroscopy/
 │   ├── data/
 │   │   └── useElements.ts           # React Query hook: fetch + cache elements JSON from S3
 │   ├── components/
+│   │   ├── AppHeader.tsx            # Branding row (44px) + optional top AdSlot; contains ☰ trigger
+│   │   ├── AppMenu.tsx              # Hamburger slide-in drawer; all game controls live here
+│   │   ├── NewTargetDialog.tsx      # Settings dialog opened by "New Target" in AppMenu
 │   │   ├── SpectrumCanvas.tsx       # Canvas pixel-scan renderer (port of SpectrumPanel.java)
-│   │   ├── PeriodicTable.tsx        # CSS Grid table using row/col from element data
+│   │   ├── PeriodicTable.tsx        # CSS Grid table; no overlay prop; zoom mode via prop
 │   │   ├── DopplerSlider.tsx        # range [-100..100] → [-1.0..1.0] with exact labels
-│   │   ├── GameControls.tsx         # New Target / Check / Hint / Reset + Emission/Absorption
-│   │   ├── PuzzleSettingsPanel.tsx  # Replaces SpectrumFactoryDialog — collapsible/popover
-│   │   ├── HintModal.tsx
-│   │   ├── BrandingHeader.tsx       # Conditional logo/name/tagline
-│   │   └── AdSlot.tsx               # Conditional AdSense (hidden when brand.hideAds)
+│   │   ├── AdSlot.tsx               # Conditional AdSense slot (hidden when brand.hideAds)
+│   │   └── Toast.tsx                # Transient feedback messages (correct/incorrect/hint)
 │   ├── store/
 │   │   └── gameStore.ts             # Zustand store
 │   ├── branding/
@@ -189,6 +283,12 @@ spectroscopy/
 ├── vite.config.ts
 └── package.json
 ```
+
+**Removed from prior plan:**
+- `GameControls.tsx` — replaced by `AppMenu.tsx`; controls no longer live on the game surface
+- `PuzzleSettingsPanel.tsx` — content folded into `NewTargetDialog.tsx`
+- `HintModal.tsx` — hint text delivered via `Toast.tsx`
+- `BrandingHeader.tsx` — replaced by `AppHeader.tsx` (more complete component)
 
 ---
 
@@ -452,9 +552,12 @@ CSS variables `--color-primary`, `--color-accent`, `--color-bg`, `--color-text` 
 
 ## Monetization
 
-- **Free/default tier**: AdSense leaderboard (728×90) below header; right rail (300×250) on screens ≥1200px. Never between the two spectrum canvases or inside the periodic table area.
-- **Branded tier**: `hideAds: true` in brand config → AdSense script not loaded at all. Annual flat-fee institutional license.
-- **Consulting link-back**: visible in default-tier footer.
+- **Free/default tier**: Two ad slots, both conditional on `!hideAds`:
+  - **Top ad** (small, e.g. 320×50 mobile banner): rendered inside `AppHeader`, below the branding row. Increases header height from 44px to ~94px.
+  - **Bottom ad** (larger, e.g. 728×90 leaderboard or 336×280 rectangle): below the periodic table. Only visible on screens with enough remaining space (tablets and desktops); gets no height on small phones and doesn't render.
+  - Never between the two spectrum canvases or inside the periodic table area.
+- **Branded tier**: `hideAds: true` in brand config → neither ad slot renders, AdSense script not loaded. Annual flat-fee institutional license.
+- **Consulting link-back**: visible in hamburger menu footer for default tier.
 
 ---
 
@@ -531,7 +634,7 @@ These details are easy to get wrong when porting from Java. Do not deviate from 
 | `SpectrumFactory.java` | `puzzleFactory.ts` | PuzzleGenerator class |
 | `PeriodicTablePanel.java` | `PeriodicTable.tsx` | CSS Grid using element row/col data |
 | `SpectroscopyApplet.java` | `App.tsx` + `gameStore.ts` | Top-level layout + event wiring |
-| `SpectrumFactoryDialog.java` | `PuzzleSettingsPanel.tsx` | Inline panel replaces modal dialog |
+| `SpectrumFactoryDialog.java` | `NewTargetDialog.tsx` | Settings dialog triggered by "New Target" in AppMenu — matches original Java applet flow |
 | `ElementXMLReader.java` | `scripts/convert-elements.ts` | One-time data conversion, not shipped |
 
 Original Java source lives at `../src/` relative to this file (the v1 project root). Reference it for exact algorithm details, especially `SpectrumPanel.java` (rendering) and `SpectrumFactory.java` (puzzle generation loop).

@@ -1,4 +1,5 @@
 import type { Element, Puzzle, PuzzleSettings, SpectralLine } from './types'
+import { hasRenderableLines } from './types'
 import { shiftLines } from './doppler'
 
 const VISIBLE_MIN = 3000
@@ -28,7 +29,7 @@ function buildFixedPuzzle(settings: PuzzleSettings, elements: Element[]): Puzzle
 }
 
 function generateRandom(settings: PuzzleSettings, elements: Element[]): Puzzle {
-  const pool = elements.filter(e => e.row <= settings.elementRowDepth && e.lines.length > 0)
+  const pool = elements.filter(e => e.row <= settings.elementRowDepth && hasRenderableLines(e))
 
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
     const count = settings.minElements + Math.floor(Math.random() * (settings.maxElements - settings.minElements + 1))

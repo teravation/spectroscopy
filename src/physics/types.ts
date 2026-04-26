@@ -46,3 +46,16 @@ export interface RGB {
   g: number
   b: number
 }
+
+// The wavelength window rendered by SpectrumCanvas and the intensity floor
+// below which lines are invisible. Used to determine whether an element has
+// any lines that will actually appear on screen.
+const RENDER_MIN = 4000
+const RENDER_MAX = 7000
+const RENDER_THRESHOLD = 10
+
+export function hasRenderableLines(element: Element): boolean {
+  return element.lines.some(
+    l => l.w >= RENDER_MIN && l.w <= RENDER_MAX && l.i > RENDER_THRESHOLD
+  )
+}

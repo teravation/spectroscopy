@@ -1,49 +1,124 @@
+/* ── CSS custom properties ───────────────────────────────────────────────── */
 :root {
   --color-bg: #000000;
   --color-text: #ffffff;
   --color-selected: #ffff00;
   --color-border: #ffffff;
+  --color-brand: #9900cc;
+  --slider-thumb-width: 16px;
 }
 
+/* ── Reset ───────────────────────────────────────────────────────────────── */
 *, *::before, *::after {
   box-sizing: border-box;
 }
 
-body {
+html, body {
   margin: 0;
+  padding: 0;
   background: var(--color-bg);
   color: var(--color-text);
   font-family: sans-serif;
+  /* Prevent elastic overscroll revealing background */
+  overscroll-behavior: none;
 }
 
-/* Periodic table font scaling — cqw is % of the grid container width.
-   Each cell is 1/18 of grid width, so 1cqw / 18 ≈ one cell unit. */
-.pt-grid {
-  container-type: inline-size;
+/* ── App root ────────────────────────────────────────────────────────────── */
+/* Fit mode: everything on screen, no page scroll */
+.app {
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: #000;
+  overflow: hidden;
 }
-.pt-symbol {
-  font-size: 2.2cqw;  /* ~40% of one cell */
-  font-weight: bold;
+
+/* Zoom mode: sticky header + natural-height PT scrolls with page */
+.app--zoom {
+  height: auto;
+  min-height: 100dvh;
+  overflow: visible;
+}
+
+/* ── Sticky zone (header + spectra) ─────────────────────────────────────── */
+.sticky-zone {
+  flex-shrink: 0;
+  background: #000;
+  /* Ensure it paints above the PT in zoom mode */
+  position: relative;
+  z-index: 10;
+}
+
+.app--zoom .sticky-zone {
+  position: sticky;
+  top: 0;
+}
+
+/* ── App header ──────────────────────────────────────────────────────────── */
+.app-header {
+  background: #000;
+  border-bottom: 1px solid #1a1a1a;
+  flex-shrink: 0;
+}
+
+.app-header__branding {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  gap: 8px;
+}
+
+.app-header__logo-text {
+  /* Approximate the Teravation logo style until a transparent PNG is exported */
+  font-family: Impact, 'Arial Narrow', sans-serif;
+  font-style: italic;
+  font-size: 1.15rem;
+  letter-spacing: 0.04em;
+  color: #9900cc;
   line-height: 1;
-  align-self: center;
-  margin-top: auto;  /* always pushes symbol to bottom regardless of whether number is shown */
+  flex-shrink: 0;
 }
-.pt-number {
-  font-size: 1.6cqw;  /* ~29% of one cell */
+
+.app-header__app-name {
+  color: #888;
+  font-size: 0.8rem;
+  font-weight: 400;
+  /* Push menu button to the right */
+  flex: 1;
+}
+
+.app-header__menu-btn {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 1.4rem;
+  cursor: pointer;
+  padding: 4px 6px;
   line-height: 1;
+  border-radius: 3px;
+  margin-left: auto;
 }
 
-@media (max-width: 600px) {
-  .pt-number {
-    display: none;
-  }
+.app-header__menu-btn:hover {
+  background: #1a1a1a;
 }
 
-/* Normalize slider thumb to a known size so tick labels can be precisely aligned */
-:root {
-  --slider-thumb-width: 16px;
+/* ── Spectra section ─────────────────────────────────────────────────────── */
+.spectra-section {
+  background: #000;
+  display: flex;
+  flex-direction: column;
+  gap: 3px; /* visual separator between target and working canvases */
 }
 
+/* Each spectrum canvas row: scales with viewport but capped so PT gets enough room */
+.spectrum-row {
+  height: clamp(70px, 20vh, 120px);
+}
+
+/* ── Doppler slider ──────────────────────────────────────────────────────── */
+/* (DopplerSlider component uses inline styles — padding kept here) */
 input[type="range"] {
   padding: 0;
   margin: 0;
@@ -55,4 +130,399 @@ input[type="range"]::-webkit-slider-thumb {
 
 input[type="range"]::-moz-range-thumb {
   width: var(--slider-thumb-width);
+}
+
+/* ── Periodic table section ──────────────────────────────────────────────── */
+.pt-section {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  /* Horizontal padding keeps the PT off the viewport edges and gives the
+     edge cell box-shadows room to render inside overflow:hidden.
+     Vertical padding does the same for the top/bottom row borders. */
+  padding: 2px 6px;
+  /* Size containment so cqw/cqh reflect the flex-allocated dimensions,
+     not child content size. Required for the @container cell calculation. */
+  container-type: size;
+  container-name: pt-section;
+}
+
+/* Zoom mode: let content overflow and scroll */
+.app--zoom .pt-section {
+  overflow-x: auto;
+  overflow-y: visible;
+}
+
+/* Fills space below the PT when the grid is shorter than the section
+   (width-constrained screens where cells are small) */
+.bottom-ad-zone {
+  flex: 1;
+}
+
+/* ── PT wrapper (PeriodicTable component root) ───────────────────────────── */
+.pt-wrapper {
+  /* Natural height — does NOT stretch to fill pt-section.
+     bottom-ad-zone sibling takes any leftover space. */
+  display: flex;
+  flex-direction: column;
+  margin: 0 auto; /* center horizontally when grid is narrower than container */
+}
+
+.pt-wrapper--zoom {
+  min-width: calc(44px * 18); /* 792px — guarantees min touch-target cell width */
+  margin: 0;
+}
+
+/* ── PT grid ─────────────────────────────────────────────────────────────── */
+.pt-grid {
+  display: grid;
+  /* 1px padding lets edge-cell box-shadows render without being clipped */
+  padding: 1px;
+  /* font-size via cqw uses THIS container's width */
+  container-type: inline-size;
+  container-name: pt-grid;
+}
+
+/* Fit mode: compute square cell size from whichever dimension is tighter.
+   cqw/cqh are the pt-section's CONTENT dimensions (after its 2px/6px padding).
+   We subtract the grid's own padding (1px each side = 2px total) before
+   dividing, so the grid fits exactly inside the section content area and the
+   edge box-shadows render inside the section's overflow:hidden boundary.
+     width:  (cqw - 2px) / 18 cols
+     height: (cqh - 6px) / 9 rows  [6 = gap-row(4) + grid-vpad(2)]
+     The footer/controls bar is now in the sticky zone, not the PT section. */
+@container pt-section (min-width: 0px) {
+  .pt-grid:not(.pt-grid--zoom) {
+    --cell: min(
+      calc((100cqw - 2px) / 18),
+      calc((100cqh - 6px) / 9)
+    );
+    grid-template-columns: repeat(18, var(--cell));
+    grid-template-rows: repeat(7, var(--cell)) 4px repeat(2, var(--cell));
+  }
+}
+
+/* Zoom mode: cells at minimum 44px, expanding to fill if wider screen */
+.pt-grid--zoom {
+  grid-template-columns: repeat(18, minmax(44px, 1fr));
+  grid-template-rows: repeat(7, auto) 4px repeat(2, auto);
+}
+
+/* ── PT cells ────────────────────────────────────────────────────────────── */
+.pt-cell {
+  background: #000;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 1px 2px;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  /* Always square — the grid column/row tracks are sized identically */
+  aspect-ratio: 1;
+  /* Adjacent cell borders merge into single lines */
+  box-shadow: 0 0 0 1px #ffffff;
+}
+
+/* ── PT text scaling (cqw = % of .pt-grid container width) ──────────────── */
+.pt-symbol {
+  font-size: 2.2cqw;
+  font-weight: bold;
+  line-height: 1;
+  align-self: center;
+  margin-top: auto;
+}
+
+.pt-number {
+  font-size: 1.6cqw;
+  line-height: 1;
+}
+
+@media (max-width: 600px) {
+  .pt-number {
+    display: none;
+  }
+}
+
+/* ── PT controls bar (always visible in sticky zone) ─────────────────────── */
+/* Contains zoom toggle + element name. Lives in the sticky zone so it's     */
+/* always accessible regardless of PT scroll position in zoom mode.           */
+.pt-controls-bar {
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  background: #000;
+  border-top: 1px solid #111;
+  position: relative; /* anchor for the absolutely-centered element name */
+  /* Height driven by the zoom button (44px min touch target) */
+}
+
+.pt-zoom-btn {
+  background: none;
+  border: 1px solid #444;
+  color: #aaa;
+  cursor: pointer;
+  border-radius: 3px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+  /* Match the minimum touch target size that motivates zoom mode */
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.pt-zoom-btn:hover {
+  border-color: #888;
+  color: #fff;
+}
+
+.pt-element-name {
+  /* Span the full bar width and center — not just the space after the button */
+  position: absolute;
+  left: 0;
+  right: 0;
+  text-align: center;
+  pointer-events: none; /* don't block clicks on the button beneath */
+  color: #fff;
+  font-size: 0.85em;
+}
+
+/* ── App menu (hamburger drawer) ─────────────────────────────────────────── */
+.app-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 200;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.app-menu-backdrop--open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.app-menu-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(280px, 85vw);
+  background: #111;
+  border-left: 1px solid #2a2a2a;
+  z-index: 201;
+  transform: translateX(100%);
+  transition: transform 0.2s ease;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-menu-panel--open {
+  transform: translateX(0);
+}
+
+.app-menu-header {
+  display: flex;
+  justify-content: flex-end;
+  padding: 6px 8px;
+  border-bottom: 1px solid #222;
+}
+
+.app-menu-close {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 3px;
+}
+
+.app-menu-close:hover {
+  color: #fff;
+  background: #222;
+}
+
+.app-menu-section {
+  padding: 6px 0;
+}
+
+.app-menu-divider {
+  border-top: 1px solid #222;
+}
+
+.app-menu-item {
+  display: block;
+  width: 100%;
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 1rem;
+  padding: 13px 20px;
+  text-align: left;
+  cursor: pointer;
+  font-family: sans-serif;
+}
+
+.app-menu-item:hover:not(:disabled) {
+  background: #1a1a1a;
+}
+
+.app-menu-item--disabled,
+.app-menu-item:disabled {
+  color: #444;
+  cursor: default;
+}
+
+.app-menu-group-label {
+  color: #555;
+  font-size: 0.7rem;
+  padding: 6px 20px 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.app-menu-radio {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #ddd;
+  font-size: 0.95rem;
+  padding: 10px 20px;
+  cursor: pointer;
+}
+
+.app-menu-radio:hover {
+  background: #1a1a1a;
+}
+
+.app-menu-radio input[type="radio"] {
+  accent-color: var(--color-brand);
+  cursor: pointer;
+}
+
+/* ── New Target dialog ───────────────────────────────────────────────────── */
+dialog.new-target-dialog {
+  background: #111;
+  border: 1px solid #333;
+  border-radius: 6px;
+  color: #fff;
+  padding: 20px 24px;
+  max-width: 320px;
+  width: 90vw;
+  /* Center in viewport */
+  margin: auto;
+}
+
+dialog.new-target-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.75);
+}
+
+.new-target-dialog__title {
+  color: #fff;
+  margin: 0 0 18px;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.new-target-dialog__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.new-target-dialog__label {
+  color: #bbb;
+  font-size: 0.9rem;
+}
+
+.new-target-dialog__controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.new-target-dialog__hint {
+  color: #555;
+  font-size: 0.8rem;
+}
+
+.new-target-dialog__select {
+  background: #222;
+  color: #fff;
+  border: 1px solid #444;
+  border-radius: 3px;
+  padding: 4px 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.new-target-dialog__checkbox {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: var(--color-brand);
+}
+
+.new-target-dialog__buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.new-target-dialog__btn-cancel {
+  background: #222;
+  color: #999;
+  border: 1px solid #333;
+  border-radius: 4px;
+  padding: 8px 18px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  font-family: sans-serif;
+}
+
+.new-target-dialog__btn-cancel:hover {
+  background: #2a2a2a;
+}
+
+.new-target-dialog__btn-go {
+  background: var(--color-brand);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 24px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: sans-serif;
+}
+
+.new-target-dialog__btn-go:hover {
+  background: #aa00dd;
+}
+
+/* ── Toast ───────────────────────────────────────────────────────────────── */
+.toast {
+  position: fixed;
+  top: 52px; /* just below the header */
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(15, 15, 15, 0.92);
+  color: #fff;
+  padding: 12px 28px;
+  border: 1px solid #555;
+  font-size: 1em;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 500;
+  transition: opacity 0.4s;
+  border-radius: 3px;
 }

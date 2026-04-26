@@ -3,8 +3,10 @@ import './index.css'
 import { SpectrumCanvas } from './components/SpectrumCanvas'
 import { PeriodicTable } from './components/PeriodicTable'
 import { DopplerSlider } from './components/DopplerSlider'
-import { GameControls } from './components/GameControls'
-import { PuzzleSettingsPanel } from './components/PuzzleSettingsPanel'
+import { AppHeader } from './components/AppHeader'
+import { AppMenu } from './components/AppMenu'
+import { NewTargetDialog } from './components/NewTargetDialog'
+import { AdSlot } from './components/AdSlot'
 import { Toast } from './components/Toast'
 import { useGameStore } from './store/gameStore'
 import { useElements } from './data/useElements'
@@ -12,16 +14,23 @@ import { SAMPLE_ELEMENTS } from './data/sampleElements'
 
 export function App() {
   const {
-    targetPuzzle, working, isEmission, showVacuumWavelengths, gamePhase, settings,
-    loadElements, generateNewPuzzle, toggleElement,
-    setVelocity, setEmissionMode, setShowVacuumWavelengths, checkAnswer, getHint, resetWorking,
-    targetLines, workingLines, updateSettings,
+    working, isEmission,
+    loadElements, toggleElement, setVelocity,
+    checkAnswer, getHint, targetLines, workingLines,
+    targetPuzzle,
   } = useGameStore()
 
   const { data: elements } = useElements()
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [newTargetOpen, setNewTargetOpen] = useState(false)
+  const [zoomMode, setZoomMode] = useState(false)
+  const [hoveredElement, setHoveredElement] = useState('')
   const [toast, setToast] = useState({ message: '', visible: false })
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const [showSettings, setShowSettings] = useState(false)
+
+  useEffect(() => {
+    loadElements(elements ?? SAMPLE_ELEMENTS)
+  }, [elements, loadElements])
 
   function showToast(text: string) {
     if (toastTimer.current) clearTimeout(toastTimer.current)
@@ -29,16 +38,18 @@ export function App() {
     toastTimer.current = setTimeout(() => setToast(t => ({ ...t, visible: false })), 3000)
   }
 
-  useEffect(() => {
-    loadElements(elements ?? SAMPLE_ELEMENTS)
-  }, [elements, loadElements])
+  function handleNewTarget() {
+    setNewTargetOpen(true)
+  }
 
   function handleCheck() {
+    setMenuOpen(false)
     const result = checkAnswer()
     showToast(result.correct ? 'Correct!' : 'Not quite!')
   }
 
   function handleHint() {
+    setMenuOpen(false)
     const hint = getHint()
     let text = `You have ${hint.correctElementCount} of the ${hint.totalElements} elements correct.`
     if (targetPuzzle && targetPuzzle.targetVelocity !== 0) {
@@ -49,49 +60,87 @@ export function App() {
     showToast(text)
   }
 
-  function handleNewTarget() {
-    generateNewPuzzle()
-  }
-
-  function handleReset() {
-    resetWorking()
-  }
-
   const displayElements = elements ?? SAMPLE_ELEMENTS
 
   return (
-    <div style={{ background: '#000', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {/* Target spectrum */}
-      <SpectrumCanvas lines={targetLines()} isEmission={isEmission} height={80} />
-      {showSettings && (
-        <PuzzleSettingsPanel settings={settings} onChange={updateSettings} />
-      )}
-      {/* Working spectrum */}
-      <SpectrumCanvas lines={workingLines()} isEmission={isEmission} height={80} />
-      <DopplerSlider velocity={working.velocity} onChange={setVelocity} />
-      <div style={{ position: 'relative', height: 0, zIndex: 1000 }}>
-        <Toast message={toast.message} visible={toast.visible} />
+    <div className={`app${zoomMode ? ' app--zoom' : ''}`}>
+
+      {/* Sticky zone — stays visible in zoom mode */}
+      <div className="sticky-zone">
+        <AppHeader onMenuOpen={() => setMenuOpen(true)} hideAds={false} />
+
+        <div className="spectra-section">
+          <div className="spectrum-row">
+            <SpectrumCanvas lines={targetLines()} isEmission={isEmission} />
+          </div>
+          <div className="spectrum-row">
+            <SpectrumCanvas lines={workingLines()} isEmission={isEmission} />
+          </div>
+          <DopplerSlider velocity={working.velocity} onChange={setVelocity} />
+        </div>
+
+        {/* Always-visible bar: zoom toggle + element name on hover/tap */}
+        <div className="pt-controls-bar">
+          <button
+            className="pt-zoom-btn"
+            onClick={() => setZoomMode(z => !z)}
+            aria-label={zoomMode ? 'Fit to screen' : 'Zoom for touch'}
+            title={zoomMode ? 'Fit to screen' : 'Zoom for touch'}
+          >
+            {zoomMode ? <MagMinusIcon /> : <MagPlusIcon />}
+          </button>
+          <span className="pt-element-name">{hoveredElement}</span>
+        </div>
       </div>
-      <PeriodicTable
-        elements={displayElements}
-        selectedIds={working.elementIds}
-        onToggle={toggleElement}
-        overlay={
-          <GameControls
-            gamePhase={gamePhase}
-            isEmission={isEmission}
-            showVacuumWavelengths={showVacuumWavelengths}
-            showSettings={showSettings}
-            onNewTarget={handleNewTarget}
-            onCheck={handleCheck}
-            onHint={handleHint}
-            onReset={handleReset}
-            onEmissionChange={setEmissionMode}
-            onWavelengthTypeChange={setShowVacuumWavelengths}
-            onToggleSettings={() => setShowSettings(s => !s)}
-          />
-        }
+
+      {/* Periodic table + bottom ad zone */}
+      <div className="pt-section">
+        <PeriodicTable
+          elements={displayElements}
+          selectedIds={working.elementIds}
+          onToggle={toggleElement}
+          onElementHover={setHoveredElement}
+          zoomMode={zoomMode}
+        />
+        <div className="bottom-ad-zone">
+          <AdSlot type="bottom" />
+        </div>
+      </div>
+
+      {/* Overlays */}
+      <AppMenu
+        open={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        onNewTarget={handleNewTarget}
+        onCheck={handleCheck}
+        onHint={handleHint}
       />
+      <NewTargetDialog
+        open={newTargetOpen}
+        onClose={() => setNewTargetOpen(false)}
+      />
+      <Toast message={toast.message} visible={toast.visible} />
     </div>
+  )
+}
+
+function MagPlusIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+      <circle cx="7.5" cy="7.5" r="5" />
+      <line x1="4.5" y1="7.5" x2="10.5" y2="7.5" />
+      <line x1="7.5" y1="4.5" x2="7.5" y2="10.5" />
+      <line x1="11.5" y1="11.5" x2="16" y2="16" />
+    </svg>
+  )
+}
+
+function MagMinusIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+      <circle cx="7.5" cy="7.5" r="5" />
+      <line x1="4.5" y1="7.5" x2="10.5" y2="7.5" />
+      <line x1="11.5" y1="11.5" x2="16" y2="16" />
+    </svg>
   )
 }
