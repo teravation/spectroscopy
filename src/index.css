@@ -139,10 +139,11 @@ input[type="range"]::-moz-range-thumb {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  /* Horizontal padding keeps the PT off the viewport edges and gives the
-     edge cell box-shadows room to render inside overflow:hidden.
-     Vertical padding does the same for the top/bottom row borders. */
-  padding: 2px 6px;
+  /* Top padding = bar height: pushes grid content below the floating bar.
+     cqh (container query height) = content box, so it automatically
+     accounts for this padding in the cell-size calculation.
+     Horizontal/bottom padding: keeps borders off the viewport edges. */
+  padding: 44px 6px 2px;
   /* Size containment so cqw/cqh reflect the flex-allocated dimensions,
      not child content size. Required for the @container cell calculation. */
   container-type: size;
@@ -255,8 +256,21 @@ input[type="range"]::-moz-range-thumb {
   padding: 0 8px;
   background: #000;
   border-top: 1px solid #111;
-  position: relative; /* anchor for the absolutely-centered element name */
-  /* Height driven by the zoom button (44px min touch target) */
+  /* Width set by element-name measurement in App.tsx; centered over the PT */
+  width: var(--pt-controls-bar-width, auto);
+  margin-left: auto;
+  margin-right: auto;
+  /* Overlay: pull the PT section up so the bar floats over its top edge.
+     z-index keeps the bar on top as cells scroll under it in zoom mode. */
+  position: relative;
+  z-index: 5;
+  margin-bottom: -44px;
+}
+
+/* Right spacer balances the zoom button so element name is truly viewport-centered */
+.pt-controls-spacer {
+  width: 44px;
+  flex-shrink: 0;
 }
 
 .pt-zoom-btn {
@@ -281,12 +295,8 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .pt-element-name {
-  /* Span the full bar width and center — not just the space after the button */
-  position: absolute;
-  left: 0;
-  right: 0;
+  flex: 1;
   text-align: center;
-  pointer-events: none; /* don't block clicks on the button beneath */
   color: #fff;
   font-size: 0.85em;
 }

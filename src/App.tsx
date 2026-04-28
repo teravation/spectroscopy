@@ -32,6 +32,27 @@ export function App() {
     loadElements(elements ?? SAMPLE_ELEMENTS)
   }, [elements, loadElements])
 
+  // Set controls bar width to fit the longest element name exactly
+  useEffect(() => {
+    const els = elements ?? SAMPLE_ELEMENTS
+    if (!els.length) return
+    const longest = els.reduce(
+      (a, b) => a.name.length >= b.name.length ? a : b
+    ).name
+    // Measure rendered text width using a temp span matching .pt-element-name styles
+    const span = document.createElement('span')
+    span.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap;font-size:0.85em;font-family:sans-serif;'
+    span.textContent = longest
+    document.body.appendChild(span)
+    const textWidth = span.getBoundingClientRect().width
+    document.body.removeChild(span)
+    // icon(44) + bar-padding(2×8) + text-breathing(2×8) + textWidth + spacer(44)
+    const barWidth = 44 + 16 + 16 + textWidth + 44
+    document.documentElement.style.setProperty(
+      '--pt-controls-bar-width', `${Math.ceil(barWidth)}px`
+    )
+  }, [elements])
+
   function showToast(text: string) {
     if (toastTimer.current) clearTimeout(toastTimer.current)
     setToast({ message: text, visible: true })
@@ -90,6 +111,8 @@ export function App() {
             {zoomMode ? <MagMinusIcon /> : <MagPlusIcon />}
           </button>
           <span className="pt-element-name">{hoveredElement}</span>
+          {/* Spacer balances the zoom button so the element name is truly centered */}
+          <span className="pt-controls-spacer" aria-hidden="true" />
         </div>
       </div>
 
