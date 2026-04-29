@@ -6,9 +6,9 @@ import { vacuumToAir } from '../physics/wavelength'
 
 // Default settings match the original Java applet init()
 const DEFAULT_SETTINGS: PuzzleSettings = {
-  minElements: 3,
-  maxElements: 3,
-  elementRowDepth: 5,
+  minElements: 2,
+  maxElements: 2,
+  elementRowDepth: 3,
   dopplerEnabled: false,
 }
 
