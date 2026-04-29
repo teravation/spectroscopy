@@ -14,7 +14,7 @@ import { SAMPLE_ELEMENTS } from './data/sampleElements'
 
 export function App() {
   const {
-    working, isEmission,
+    working, isEmission, gamePhase,
     loadElements, toggleElement, setVelocity,
     checkAnswer, getHint, targetLines, workingLines,
     targetPuzzle,
@@ -64,7 +64,7 @@ export function App() {
   }
 
   function handleCheck() {
-    setMenuOpen(false)
+    setMenuOpen(false) // no-op if called from controls bar, harmless
     const result = checkAnswer()
     showToast(result.correct ? 'Correct!' : 'Not quite!')
   }
@@ -91,8 +91,15 @@ export function App() {
         <AppHeader onMenuOpen={() => setMenuOpen(true)} hideAds={false} />
 
         <div className="spectra-section">
+          {/* Target spectrum — shows "New Target" invite when idle, feedback toast when active */}
           <div className="spectrum-row">
             <SpectrumCanvas lines={targetLines()} isEmission={isEmission} />
+            {gamePhase === 'idle' && (
+              <button className="spectrum-cta" onClick={handleNewTarget}>
+                ▶ New Target…
+              </button>
+            )}
+            <Toast message={toast.message} visible={toast.visible} />
           </div>
           <div className="spectrum-row">
             <SpectrumCanvas lines={workingLines()} isEmission={isEmission} />
@@ -100,7 +107,7 @@ export function App() {
           <DopplerSlider velocity={working.velocity} onChange={setVelocity} />
         </div>
 
-        {/* Always-visible bar: zoom toggle + element name on hover/tap */}
+        {/* Always-visible bar: zoom toggle + element name + context action */}
         <div className="pt-controls-bar">
           <button
             className="pt-zoom-btn"
@@ -111,8 +118,17 @@ export function App() {
             {zoomMode ? <MagMinusIcon /> : <MagPlusIcon />}
           </button>
           <span className="pt-element-name">{hoveredElement}</span>
-          {/* Spacer balances the zoom button so the element name is truly centered */}
-          <span className="pt-controls-spacer" aria-hidden="true" />
+          {/* Right slot: context-sensitive by game phase */}
+          {gamePhase === 'active'
+            ? <button className="pt-check-btn" onClick={handleCheck} title="Check Answer">
+                <CheckIcon />
+              </button>
+            : gamePhase === 'solved'
+            ? <button className="pt-check-btn" onClick={handleNewTarget} title="New Target">
+                ▶
+              </button>
+            : <span className="pt-controls-spacer" aria-hidden="true" />
+          }
         </div>
       </div>
 
@@ -142,7 +158,6 @@ export function App() {
         open={newTargetOpen}
         onClose={() => setNewTargetOpen(false)}
       />
-      <Toast message={toast.message} visible={toast.visible} />
     </div>
   )
 }
@@ -164,6 +179,14 @@ function MagMinusIcon() {
       <circle cx="7.5" cy="7.5" r="5" />
       <line x1="4.5" y1="7.5" x2="10.5" y2="7.5" />
       <line x1="11.5" y1="11.5" x2="16" y2="16" />
+    </svg>
+  )
+}
+
+function CheckIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="2,9 7,14 16,4" />
     </svg>
   )
 }
