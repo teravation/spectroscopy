@@ -118,6 +118,18 @@ html, body {
   position: relative; /* anchor for .spectrum-cta overlay */
 }
 
+/* Short screens (landscape phones): shrink spectra and compress Doppler */
+@media (max-height: 500px) {
+  .spectrum-row {
+    height: clamp(36px, 8vh, 60px);
+  }
+
+  /* Hide "Towards Viewer / Away From Viewer" labels — velocity numbers stay */
+  .doppler-direction {
+    display: none;
+  }
+}
+
 /* "New Target" invite — centered button overlaying the blank target canvas */
 .spectrum-cta {
   position: absolute;

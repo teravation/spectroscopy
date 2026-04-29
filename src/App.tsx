@@ -32,6 +32,17 @@ export function App() {
     loadElements(elements ?? SAMPLE_ELEMENTS)
   }, [elements, loadElements])
 
+  // Auto-zoom when viewport is too short for usable fit-mode cells (landscape phones).
+  // Bidirectional: silently exits zoom mode when rotating back to portrait.
+  // User can always manually override with the zoom button between resize events.
+  useEffect(() => {
+    const mq = window.matchMedia('(max-height: 500px)')
+    const update = () => setZoomMode(mq.matches)
+    update()
+    mq.addEventListener('change', update)
+    return () => mq.removeEventListener('change', update)
+  }, [])
+
   // Set controls bar width to fit the longest element name exactly
   useEffect(() => {
     const els = elements ?? SAMPLE_ELEMENTS

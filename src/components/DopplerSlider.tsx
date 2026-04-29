@@ -64,7 +64,7 @@ export function DopplerSlider({ velocity, onChange }: Props) {
           </span>
         ))}
       </div>
-      <div style={styles.tickRow}>
+      <div style={styles.tickRow} className="doppler-direction">
         {DIRECTION_TICKS.map(t => (
           <span key={t.value} style={{ ...styles.tick, left: tickLeft(t.value) }}>
             {t.label}
