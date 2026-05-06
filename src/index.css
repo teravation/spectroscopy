@@ -596,3 +596,61 @@ dialog.new-target-dialog::backdrop {
   transition: opacity 0.4s;
   border-radius: 3px;
 }
+
+/* ── Two-column landscape layout (experiment) ────────────────────────────── */
+/* At (orientation: landscape) and (max-height: 500px) the app switches from  */
+/* a single vertical stack to left column (spectra) + right column (PT).      */
+/* Tried at 38/62 and 50/50 splits — content shifts were disorienting.        */
+/* Preserved here for future iteration.                                        */
+@media (orientation: landscape) and (max-height: 500px) {
+
+  .app,
+  .app--zoom {
+    flex-direction: row;
+    align-items: stretch;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  .sticky-zone {
+    flex: 0 0 50%;
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    overflow: hidden;
+    position: static;
+    border-right: 1px solid #1a1a1a;
+  }
+
+  .app--zoom .sticky-zone {
+    position: static;
+  }
+
+  .spectra-section {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .spectrum-row {
+    flex: 1;
+    height: auto;
+  }
+
+  .pt-controls-bar {
+    width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+    margin-bottom: 0;
+  }
+
+  .pt-section {
+    flex: 1;
+    height: 100dvh;
+    overflow: auto;
+    padding-top: 2px;
+  }
+
+  .app--zoom .pt-section {
+    overflow: auto;
+  }
+}
