@@ -477,6 +477,23 @@ input[type="range"]::-moz-range-thumb {
   cursor: pointer;
 }
 
+.app-menu-meta {
+  color: #555;
+  font-size: 0.75rem;
+  padding: 3px 20px;
+  line-height: 1.5;
+}
+
+.app-menu-link {
+  color: #777;
+  text-decoration: none;
+}
+
+.app-menu-link:hover {
+  color: #aaa;
+  text-decoration: underline;
+}
+
 /* ── New Target dialog ───────────────────────────────────────────────────── */
 dialog.new-target-dialog {
   background: #111;

@@ -8,71 +8,68 @@ Phase status, open tasks, and verification checklist. Architecture decisions and
 
 ### Phase 1 — Playable core ✅
 - [x] Init GitHub repo; scaffold Vite + React + TS; add GitHub Actions deploy workflow
-- [x] Run `scripts/convert-elements.ts` → upload `elements.json` to S3
+- [x] Run `scripts/fetch_elements.py` → upload `elements.json` to S3
 - [x] Port physics layer (`types.ts`, `doppler.ts`, `wavelengthToColor.ts`) + unit tests
 - [x] `useElements.ts` — React Query fetch from S3
 - [x] `SpectrumCanvas.tsx` — validate H and He spectra visually (known fingerprints)
 - [x] `PeriodicTable.tsx` — CSS Grid from element `row`/`col` data
 - [x] `DopplerSlider.tsx` — wired to Zustand velocity, live repaint
-- [x] `GameControls.tsx` + `PuzzleGenerator` (random mode only)
+- [x] `PuzzleGenerator` (random mode only)
 - [x] Wire `App.tsx` — game is now playable end-to-end
 - [x] Deploy to S3 + CloudFront; verify elements.json loads and spectra render
 
-### Phase 1a — Additions and fixes post-launch
-- [x] Air/vacuum wavelength toggle in UI (near Emission/Absorption toggle). Vacuum is canonical in elements.json (NIST `show_av=3`); vacuumToAir() (Edlén formula) applied at render time when Air is selected. Vacuum/Air radio group in GameControls, defaulting to Vacuum. Doppler shift operates in vacuum; conversion to air is display-only.
-- [x] Periodic table layout: Lu/Lr moved to main body group 3 (rows 6/7, col 3, under Sc/Y); La/Ac stay at start of f-block rows (rows 9/10, col 3); Ce–Yb and Th–No at cols 4–16; d-block (Hf–At, Rf–Ts) corrected to cols 4–17 (was off by +1 due to old script placing both La and Lu in main body).
-- [x] Layout condensation: game controls (buttons + Emission/Absorption toggle) moved into the PT empty space (cols 3–12, rows 1–3); message area fixed-height (no layout shift); page title → "Spectroscopy"; favicon.ico added.
-- [x] Doppler slider tick marks at labeled positions (−100, −75, −50, −25, 0, +25, +50, +75, +100). CSS overlay preferred over native `<datalist>` for cross-browser consistency.
-- [x] Absorption mode shows black canvas when no elements selected — fixed early-return guard to allow rainbow continuum to render.
-- [x] Zero-line elements: excluded from puzzle generation pool (`e.lines.length > 0` filter in puzzleFactory). In PeriodicTable, elements with no lines render dimmed (#333 text + border) with no click handler, pointer, role, or aria-pressed — visually inert.
-- [x] Message area layout shift: fixed — message area is now a fixed-height container with absolutely-positioned text.
+### Phase 1a — Additions and fixes post-launch ✅
+- [x] Air/vacuum wavelength toggle (Edlén formula applied at render time; Vacuum/Air in menu)
+- [x] Periodic table layout: Lu/Lr in main body group 3; La/Ac at f-block start; d-block column offsets corrected
+- [x] Doppler slider tick marks at labeled positions — CSS overlay for cross-browser consistency
+- [x] Absorption mode: fixed early-return guard so rainbow continuum renders with no elements selected
+- [x] Zero-line / no-renderable-line elements: dimmed in PT, excluded from puzzle pool (`hasRenderableLines()`)
+- [x] Te, Rn, Fr, Yb, Np correctly dimmed — had lines in data but none above render threshold in visible range
 
-### Phase 2 — Polish
-- [ ] **PT zoom toggle** — button (in bottom-left or bottom-right PT gap: rows 9–10, cols 1–2 or 17–18) that switches between fit-all view (current) and zoomed view (fixed ~44px cells, PT scrolls independently in both directions with `overflow: auto`). Fixes mobile touch targets. Works on desktop too for accessibility.
-- [ ] **Mobile layout** — when zoom is on, fix the header (spectra + slider + message) and make the PT fill remaining viewport height as a scroll container. Non-game controls (New Target, Settings) move to a ⋮ overflow menu to reclaim vertical space.
-- [ ] Keyboard navigation on periodic table (arrow keys move focus, Enter toggles, Tab to buttons)
-- [ ] ARIA labels on spectrum canvases (text description: "Target spectrum: 3 elements, moderate redshift")
-- [ ] **Mobile portrait (≤390px) layout** — tested at 390×844 (iPhone 14):
-  - [ ] Horizontal overflow: page renders ~516px wide, causing horizontal scroll — root cause is the 18-column periodic table with no mobile breakpoint; needs `overflow-x: hidden` on root + responsive table scaling
-  - [ ] Button bar clips: "New Target" wraps to 2 lines; "Absorption" label overflows and is cut off at viewport edge — button bar needs wrapping or condensed layout at narrow widths
-  - [ ] Touch targets: periodic table cells render ~20px each, well below the 44px minimum — cells need to scale up or the table needs a horizontal-scroll container with fixed cell size
-  - [ ] Canvases very short (~60px each) at narrow width — consider stacking canvases vertically with min-height
-- [ ] **Mobile landscape (844×390) layout** — tested at 844×390:
-  - [ ] No horizontal overflow at this width ✓
-  - [ ] Both canvases crushed to ~50px each — spectra barely readable; height-constrained layout needed
-  - [ ] Periodic table extends below fold; requires vertical scroll to reach most elements
-  - [ ] Consider `transform: scale()` on the root container to fit everything in viewport height without scrolling
-- [ ] Periodic table cell density: hide atomic number on small screens; show element name inside cell on large screens (≥1400px)
-- [ ] Font sizing polish: cqw-based scaling needs tuning across breakpoints — symbols and atomic numbers should feel proportional at all screen sizes
+### Phase 2 — UX redesign + responsive layout ✅
+- [x] Full UX redesign: hamburger menu (`AppMenu`), all game controls off the game surface
+- [x] `AppHeader` — TERAVATION branding + ☰ trigger + optional top ad slot
+- [x] `NewTargetDialog` — settings dialog opened by New Target (matches original Java applet flow)
+- [x] Always-square PT cells via CSS container queries: `--cell = min(cqw/18, cqh/9)`
+- [x] PT zoom mode: magnifying glass toggle (44px touch target), auto-zoom on `max-height: 500px`
+- [x] Controls bar: compact floating pill (sized to longest element name), centered over PT top edge
+- [x] Context-sensitive controls bar right slot: ✓ Check when active, ▶ New Target when solved
+- [x] "▶ New Target…" button overlaid on target spectrum canvas when idle
+- [x] Toast feedback centered in target spectrum canvas
+- [x] Element name display in controls bar — fires on hover and tap (including dimmed elements)
+- [x] Landscape phone layout: `max-height: 500px` media query shrinks spectra to `clamp(36px, 8vh, 60px)`, hides Doppler direction labels, auto-zooms PT
+- [x] Default puzzle settings changed to 2 elements from first 3 rows (more approachable)
+- [x] `vite.config.ts`: `server.host = true` for LAN dev access
+
+### Phase 2 — Still open
+- [ ] Keyboard navigation on periodic table (arrow keys move focus, Enter toggles, Tab to next button)
+- [ ] ARIA labels on spectrum canvases (e.g. "Target spectrum: 2 elements, slight redshift")
 - [ ] First-visit tutorial overlay (dismissible, stored in `localStorage`)
-- [ ] Spectral line QA: compare rendered spectra against Ohio State reference images; tune INTENSITY_THRESHOLD and canvas range (consider extending left edge to ~3800 Å for Hε)
-- [ ] Once we move to some kind of menu, we'll want a menu item to show the last update date of the spectral dataset.
-- [ ] Once we move to some kind of menu, we'll want a menu item to show any/all licenses, copyright, etc.
+- [ ] Spectral line QA: compare rendered spectra against Ohio State reference images; tune `INTENSITY_THRESHOLD` and consider extending canvas left edge to ~3800 Å for Hε
+- [ ] Dataset version in ☰ menu (e.g. "Dataset: April 2026") — hook exists, needs real value wired
+- [ ] Licenses / copyright in ☰ menu — hook exists, needs content
 
 ### Phase 3 — Educator URL sharing
-- [x] `PuzzleSettingsPanel.tsx` — component exists
-- [ ] Bidirectional URL param sync (changing settings updates URL; loading URL restores settings)
+- [ ] Bidirectional URL param sync: changing settings updates URL; loading URL restores settings
 - [ ] Pre-programmed puzzle support via `?elements=1,2,11&velocity=0.35`
-- [ ] Default settings panel: match original dialog defaults (min=1, max=2, rows=3, doppler=No)
+- [ ] Encrypted student URL via `?puzzle=<token>` (AES-GCM, bundle key Phase 1 → server key Phase 2)
 
 ### Phase 4 — PWA + offline
-- [ ] Configure `vite-plugin-pwa`: pre-cache app shell, network-first cache for `elements.json` with offline fallback
+- [ ] Configure `vite-plugin-pwa`: pre-cache app shell, network-first for `elements.json` with offline fallback
 
 ### Phase 5 — Science / About page
-- [ ] Public-facing "How it works" page (route `/about` or modal). Audience: curious players, teachers, museum visitors — not developers.
-  - What spectroscopy is and how astronomers use it to identify elements
-  - How the app models emission spectra: Aki (Einstein A coefficients), global cross-element normalization, why our spectra look different from discharge tube photos
-  - How Doppler shift works and what velocity tells you about a star
-  - Why elements like Iron are dense and overwhelming while Hydrogen is sparse — it's real physics
-  - Why Iodine looks sparse in the app but glows richly in a discharge tube (atomic I vs molecular I₂)
-  - External links: NIST ASD, OSU reference spectra, HyperPhysics, Wikipedia (Spectral line, Einstein coefficients, Doppler effect, Fraunhofer lines)
-  - Source: condense PROJECT.md physics sections; strip implementation details; add introductory framing for non-developer audience
+- [ ] Public-facing "How it works" page (`/about` route or modal). Audience: players, teachers, museum visitors.
+  - What spectroscopy is and how astronomers use it
+  - Aki normalization: why our spectra differ from discharge tube photos
+  - Doppler shift and what velocity means
+  - Why Iron looks dense and overwhelming; why Iodine looks sparse (atomic vs molecular I₂)
+  - External links: NIST ASD, OSU reference spectra, HyperPhysics, Wikipedia
 
 ### Phase 6 — Branding + ads
-- [ ] `useBranding.ts` + `BrandingHeader.tsx` + CSS variables on `:root`
-- [ ] `AdSlot.tsx` — conditional AdSense loading
+- [ ] `useBranding.ts` — load brand config from S3 by subdomain or `?brand=` param
+- [ ] CSS variables from brand config (`--color-primary`, `--color-accent`, etc.)
+- [ ] `AdSlot.tsx` — replace placeholder with real AdSense loading (top: small banner; bottom: leaderboard)
 - [ ] Test subdomain routing locally via `/etc/hosts`
-
 
 ---
 
@@ -80,8 +77,8 @@ Phase status, open tasks, and verification checklist. Architecture decisions and
 
 - [ ] H, He, Na spectra match known reference images. Na doublet (~5890 Å) = two bright adjacent yellow lines.
 - [ ] Doppler: `velocity=0.1` shifts all lines ~10% redward; `velocity=-0.1` = blueshift.
-- [ ] Puzzle solve: select correct elements + match velocity within 1 slider tick → "Correct!"
-- [ ] Pre-programmed: `?elements=1,2&velocity=0.00` → exact puzzle loads immediately on start, no random generation.
+- [ ] Puzzle solve: select correct elements + match velocity within 1 slider tick → "Correct!" toast in target canvas.
+- [ ] Pre-programmed: `?elements=1,2&velocity=0.00` → exact puzzle loads immediately on start.
 - [ ] URL sharing: changing settings updates URL; loading that URL restores settings.
 - [ ] Branding: `?brand=test` → custom logo/colors applied, ads absent.
 - [ ] Offline: load once, kill network, reload → game still fully playable.

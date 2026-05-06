@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import './index.css'
+import { version as APP_VERSION } from '../package.json'
 import { SpectrumCanvas } from './components/SpectrumCanvas'
 import { PeriodicTable } from './components/PeriodicTable'
 import { DopplerSlider } from './components/DopplerSlider'
@@ -20,7 +21,9 @@ export function App() {
     targetPuzzle,
   } = useGameStore()
 
-  const { data: elements } = useElements()
+  const { data: elementsData } = useElements()
+  const elements = elementsData?.elements
+  const datasetVersion = elementsData?.datasetDate ?? ''
   const [menuOpen, setMenuOpen] = useState(false)
   const [newTargetOpen, setNewTargetOpen] = useState(false)
   const [zoomMode, setZoomMode] = useState(false)
@@ -45,7 +48,7 @@ export function App() {
 
   // Set controls bar width to fit the longest element name exactly
   useEffect(() => {
-    const els = elements ?? SAMPLE_ELEMENTS
+    const els = elementsData?.elements ?? SAMPLE_ELEMENTS
     if (!els.length) return
     const longest = els.reduce(
       (a, b) => a.name.length >= b.name.length ? a : b
@@ -164,6 +167,8 @@ export function App() {
         onNewTarget={handleNewTarget}
         onCheck={handleCheck}
         onHint={handleHint}
+        appVersion={APP_VERSION}
+        datasetVersion={datasetVersion}
       />
       <NewTargetDialog
         open={newTargetOpen}

@@ -8,9 +8,11 @@ interface Props {
   onNewTarget: () => void
   onCheck: () => void
   onHint: () => void
+  appVersion: string
+  datasetVersion: string
 }
 
-export function AppMenu({ open, onClose, onNewTarget, onCheck, onHint }: Props) {
+export function AppMenu({ open, onClose, onNewTarget, onCheck, onHint, appVersion, datasetVersion }: Props) {
   const {
     gamePhase,
     isEmission,
@@ -106,6 +108,13 @@ export function AppMenu({ open, onClose, onNewTarget, onCheck, onHint }: Props) 
 
         <div className="app-menu-section">
           <MenuItem onClick={onClose}>ℹ  About…</MenuItem>
+        </div>
+
+        <div className="app-menu-section" style={{ marginTop: 'auto' }}>
+          <div className="app-menu-divider" />
+          <div className="app-menu-meta">
+            v{appVersion}{datasetVersion && ` (Dataset: ${datasetVersion})`}
+          </div>
         </div>
       </nav>
     </>

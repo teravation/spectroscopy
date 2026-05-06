@@ -31,7 +31,8 @@ describe('fetchElements', () => {
     } as Response)
 
     const result = await fetchElements('https://example.com/elements.json')
-    expect(result).toEqual(mockElements)
+    expect(result.elements).toEqual(mockElements)
+    expect(result.datasetDate).toBe('2024-01-01')
   })
 
   it('throws on non-ok response', async () => {

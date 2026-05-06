@@ -11,9 +11,17 @@ interface ElementsDataFile {
 const DEFAULT_URL = import.meta.env.VITE_ELEMENTS_URL as string | undefined
   ?? '/elements.json'
 
-export async function fetchElements(url = DEFAULT_URL): Promise<Element[]> {
+export interface ElementsMeta {
+  elements: Element[]
+  datasetDate: string   // YYYY-MM-DD derived from generatedAt
+}
+
+export async function fetchElements(url = DEFAULT_URL): Promise<ElementsMeta> {
   const res = await fetch(url)
   if (!res.ok) throw new Error(`Failed to fetch elements: ${res.status}`)
   const data: ElementsDataFile = await res.json()
-  return data.elements
+  return {
+    elements: data.elements,
+    datasetDate: data.generatedAt.slice(0, 10),
+  }
 }
