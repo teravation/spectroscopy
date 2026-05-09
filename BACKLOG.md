@@ -37,8 +37,9 @@ Phase status, open tasks, and verification checklist. Architecture decisions and
 - [x] "▶ New Target…" button overlaid on target spectrum canvas when idle
 - [x] Toast feedback centered in target spectrum canvas
 - [x] Element name display in controls bar — fires on hover and tap (including dimmed elements)
-- [x] Landscape phone layout: `max-height: 500px` media query shrinks spectra to `clamp(36px, 8vh, 60px)`, hides Doppler direction labels, auto-zooms PT
-- [x] Default puzzle settings changed to 2 elements from first 3 rows (more approachable)
+- [x] Landscape phone layout: `max-height: 500px` media query shrinks spectra, hides Doppler direction labels, auto-zooms PT
+- [x] Default puzzle settings: 2 elements from first 3 rows
+- [x] App version + dataset date shown at bottom of ☰ menu
 - [x] `vite.config.ts`: `server.host = true` for LAN dev access
 
 ### Phase 2 — Still open
@@ -46,8 +47,6 @@ Phase status, open tasks, and verification checklist. Architecture decisions and
 - [ ] ARIA labels on spectrum canvases (e.g. "Target spectrum: 2 elements, slight redshift")
 - [ ] First-visit tutorial overlay (dismissible, stored in `localStorage`)
 - [ ] Spectral line QA: compare rendered spectra against Ohio State reference images; tune `INTENSITY_THRESHOLD` and consider extending canvas left edge to ~3800 Å for Hε
-- [ ] Dataset version in ☰ menu (e.g. "Dataset: April 2026") — hook exists, needs real value wired
-- [ ] Licenses / copyright in ☰ menu — hook exists, needs content
 
 ### Phase 3 — Educator URL sharing
 - [ ] Bidirectional URL param sync: changing settings updates URL; loading URL restores settings
@@ -57,13 +56,14 @@ Phase status, open tasks, and verification checklist. Architecture decisions and
 ### Phase 4 — PWA + offline
 - [ ] Configure `vite-plugin-pwa`: pre-cache app shell, network-first for `elements.json` with offline fallback
 
-### Phase 5 — Science / About page
-- [ ] Public-facing "How it works" page (`/about` route or modal). Audience: players, teachers, museum visitors.
-  - What spectroscopy is and how astronomers use it
-  - Aki normalization: why our spectra differ from discharge tube photos
-  - Doppler shift and what velocity means
-  - Why Iron looks dense and overwhelming; why Iodine looks sparse (atomic vs molecular I₂)
-  - External links: NIST ASD, OSU reference spectra, HyperPhysics, Wikipedia
+### Phase 5 — Science / About page ✅
+- [x] `/about` route — spectroscopy primer, Doppler effect, stellar chemistry + cosmic history, how the app works, app history (DMNS, Millikin University, Apprentissage électronique Ontario, secondary schools)
+- [x] `/licenses` route — auto-generated third-party license text (build-time Vite plugin, gitignored)
+- [x] React Router v7 for client-side routing; CloudFront custom error responses (403+404 → index.html) for direct URL access and SEO indexability
+- [x] MDX via `@mdx-js/rollup` (devDep, zero runtime cost) — content in `src/pages/about.md`
+- [x] MIT License file added (`LICENSE`)
+- [ ] Secondary pages for deeper physics treatment (Aki normalization, reference spectra comparison)
+- [ ] OSU reference spectra comparison and explanation of how our spectra differ
 
 ### Phase 6 — Branding + ads
 - [ ] `useBranding.ts` — load brand config from S3 by subdomain or `?brand=` param
@@ -84,3 +84,4 @@ Phase status, open tasks, and verification checklist. Architecture decisions and
 - [ ] Offline: load once, kill network, reload → game still fully playable.
 - [ ] HiDPI: spectra appear crisp (not blurry) on Retina/HiDPI displays.
 - [ ] AWS Cost Explorer < $2/month after launch.
+- [ ] /about and /licenses load directly by URL (no navigation from game required).
