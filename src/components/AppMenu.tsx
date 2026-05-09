@@ -1,5 +1,6 @@
 import type React from 'react'
 import { useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useGameStore } from '../store/gameStore'
 
 interface Props {
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export function AppMenu({ open, onClose, onNewTarget, onCheck, onHint, appVersion, datasetVersion }: Props) {
+  const navigate = useNavigate()
   const {
     gamePhase,
     isEmission,
@@ -107,7 +109,7 @@ export function AppMenu({ open, onClose, onNewTarget, onCheck, onHint, appVersio
         <div className="app-menu-divider" />
 
         <div className="app-menu-section">
-          <MenuItem onClick={onClose}>ℹ  About…</MenuItem>
+          <MenuItem onClick={() => { onClose(); navigate('/about') }}>ℹ  About…</MenuItem>
         </div>
 
         <div className="app-menu-section" style={{ marginTop: 'auto' }}>

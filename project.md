@@ -2,7 +2,7 @@
 
 ## Context
 
-The original Spectroscopy app (Java Swing, circa 2003) was a puzzle-based educational tool teaching how astronomers identify elemental composition and radial velocity of stars via spectroscopy. It has proven real-world traction — deployed at the Denver Museum of Nature & Science and in college curricula. The goal is to reboot it as a modern React web app: keep it free to play, cover hosting via AdSense + branded institutional deals (museums, universities), and host cheaply on AWS. Open-sourced on GitHub.
+The original Spectroscopy app (Java Swing, circa 2003) was a puzzle-based educational tool teaching how astronomers identify elemental composition and radial velocity of stars via spectroscopy. It has proven real-world traction — deployed at the Denver Museum of Nature & Science, included in the AS100 course at Millikin University, distributed through Apprentissage électronique Ontario, and used in secondary schools in Europe and South America. The goal is to reboot it as a modern React web app: keep it free to play, cover hosting via AdSense + branded institutional deals (museums, universities), and host cheaply on AWS. Open-sourced on GitHub.
 
 The app is stateless — no backend or user accounts needed for the core experience, so hosting costs are near-zero.
 
@@ -654,6 +654,17 @@ Use these for visual QA of the rendered spectra and intensity methodology. **All
 | NIST Atomic Spectra Database | https://physics.nist.gov/PhysRefData/ASD/lines_form.html | Primary data source. The `intens` field in NIST is empirical and per-element only — NIST's own documentation says it is meaningful "only within a given spectrum." We use Aki (Einstein A coefficient) for cross-element intensity. |
 | HyperPhysics atomic spectra | http://hyperphysics.phy-astr.gsu.edu/hbase/quantum/atspect.html#c1 | Computer-generated from NIST data, per-element normalized. Good for checking which lines should dominate *within* an element. Sources disagree on some relative intensities (e.g. He's two red lines near 6562 Å and 6680 Å) due to differing excitation conditions — this is a known physics ambiguity, not an error in either source. |
 | HyperPhysics iodine discharge tube photo | http://hyperphysics.phy-astr.gsu.edu/hbase/quantum/modpic/iodinetube.jpg | Shows a **molecular iodine (I₂) discharge tube**, not atomic iodine. I₂ has dense electronic band transitions throughout the visible spectrum, giving it a rich purple/violet glow. Our data is atomic I from NIST ASD — correctly sparse in the visible (most strong atomic I lines are in the near-IR, 8000–10000 Å). The two are not comparable: molecular vs atomic emission are completely different physical processes. |
+
+## Old References / Usages
+- Millikin University (Decatur, IL) by Dr. Michael Rogers
+- - https://web.archive.org/web/20060503184601/http://math.millikin.edu/Courses/currentCourses/as100.s06/as100.syllabus.html
+- - https://web.archive.org/web/20060503184705/http://math.millikin.edu/Courses/currentCourses/as100.s06/SpectroscopyApplet.html
+- The spectral simulator websites were used in physics classes at Escola Estadual Maria Rita de Cássia Pontes Teixeira, a public high school in Campo Grande, MS, Brazil.
+- Wiesław Kruczała, teacher, Polish secondary school
+- Apprentissage électronique Ontario
+- Possibly Peirce at Lackawanna College (peirce.edu)
+- Possibly University of Puget Sound (ups.edu)
+- Possibly secondary school in France
 
 ---
 

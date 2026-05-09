@@ -613,3 +613,105 @@ dialog.new-target-dialog::backdrop {
   transition: opacity 0.4s;
   border-radius: 3px;
 }
+
+/* ── Static pages (About, Licenses) ─────────────────────────────────────── */
+.page-shell {
+  min-height: 100dvh;
+  background: #000;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+}
+
+.page-shell__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+  height: 44px;
+  border-bottom: 1px solid #1a1a1a;
+  flex-shrink: 0;
+}
+
+.page-shell__back {
+  margin-left: auto;
+  color: #888;
+  font-size: 0.85rem;
+  text-decoration: none;
+}
+
+.page-shell__back:hover {
+  color: #fff;
+}
+
+.page-shell__content {
+  max-width: 720px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 32px 24px 64px;
+}
+
+/* Markdown content styles */
+.page-h1 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin: 0 0 24px;
+  color: #fff;
+}
+
+.page-h2 {
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin: 40px 0 12px;
+  color: #fff;
+  border-bottom: 1px solid #222;
+  padding-bottom: 6px;
+}
+
+.page-h3 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin: 28px 0 8px;
+  color: #ddd;
+}
+
+.page-shell__content p {
+  color: #bbb;
+  line-height: 1.7;
+  margin: 0 0 16px;
+}
+
+.page-shell__content strong {
+  color: #fff;
+}
+
+.page-link {
+  color: #9900cc;
+  text-decoration: none;
+}
+
+.page-link:hover {
+  text-decoration: underline;
+}
+
+.page-hr {
+  border: none;
+  border-top: 1px solid #222;
+  margin: 40px 0;
+}
+
+.page-meta {
+  color: #888;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  margin: 0 0 12px;
+}
+
+.page-licenses {
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: #888;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}

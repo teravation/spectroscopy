@@ -18,6 +18,9 @@ dist-ssr
 # Data pipeline scratch space (top-level only, not src/data/)
 /data/
 
+# Generated at build time by licensesPlugin() in vite.config.ts
+/public/THIRD_PARTY_LICENSES.txt
+
 # UI snapshots (local reference only)
 /snapshots/
 __pycache__/
