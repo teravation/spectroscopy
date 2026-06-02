@@ -670,6 +670,9 @@ Use these for visual QA of the rendered spectra and intensity methodology. **All
 | NIST Atomic Spectra Database | https://physics.nist.gov/PhysRefData/ASD/lines_form.html | Primary data source. The `intens` field in NIST is empirical and per-element only — NIST's own documentation says it is meaningful "only within a given spectrum." We use Aki (Einstein A coefficient) for cross-element intensity. |
 | HyperPhysics atomic spectra | http://hyperphysics.phy-astr.gsu.edu/hbase/quantum/atspect.html#c1 | Computer-generated from NIST data, per-element normalized. Good for checking which lines should dominate *within* an element. Sources disagree on some relative intensities (e.g. He's two red lines near 6562 Å and 6680 Å) due to differing excitation conditions — this is a known physics ambiguity, not an error in either source. |
 | HyperPhysics iodine discharge tube photo | http://hyperphysics.phy-astr.gsu.edu/hbase/quantum/modpic/iodinetube.jpg | Shows a **molecular iodine (I₂) discharge tube**, not atomic iodine. I₂ has dense electronic band transitions throughout the visible spectrum, giving it a rich purple/violet glow. Our data is atomic I from NIST ASD — correctly sparse in the visible (most strong atomic I lines are in the near-IR, 8000–10000 Å). The two are not comparable: molecular vs atomic emission are completely different physical processes. |
+https://atomic-spectra.net/rcgnz4.htm
+
+https://chem.libretexts.org/Bookshelves/General_Chemistry/Map%3A_Chemistry_-_The_Central_Science_%28Brown_et_al.%29/06%3A_Electronic_Structure_of_Atoms/6.03%3A_Line_Spectra_and_the_Bohr_Model
 
 ## Old References / Usages
 - Millikin University (Decatur, IL) by Dr. Michael Rogers
