@@ -69,20 +69,17 @@ html, body {
   gap: 8px;
 }
 
-.app-header__logo-text {
-  /* Approximate the Teravation logo style until a transparent PNG is exported */
-  font-family: Impact, 'Arial Narrow', sans-serif;
-  font-style: italic;
-  font-size: 1.15rem;
-  letter-spacing: 0.04em;
-  color: #9900cc;
-  line-height: 1;
+.app-header__logo-img {
+  height: 15px;
+  width: auto;
   flex-shrink: 0;
+  filter: brightness(2);
+  transform: translateY(-2px);
 }
 
 .app-header__app-name {
-  color: #888;
-  font-size: 0.8rem;
+  color: #bbb;
+  font-size: 1.1rem;
   font-weight: 400;
   /* Push menu button to the right */
   flex: 1;

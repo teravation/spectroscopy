@@ -9,8 +9,7 @@ export function AppHeader({ onMenuOpen, hideAds = false }: Props) {
   return (
     <header className="app-header">
       <div className="app-header__branding">
-        {/* TODO: replace with transparent PNG export from logo.psd */}
-        <span className="app-header__logo-text" aria-label="Teravation">TERAVATION</span>
+        <img src="/teravation-logo.png" className="app-header__logo-img" alt="Teravation" />
         <span className="app-header__app-name">Spectroscopy</span>
         <button
           className="app-header__menu-btn"

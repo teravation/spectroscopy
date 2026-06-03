@@ -577,6 +577,47 @@ CSS variables `--color-primary`, `--color-accent`, `--color-bg`, `--color-text` 
 
 ---
 
+## Traffic Growth
+
+No existing institutional contacts — growth is entirely organic. Ad revenue only becomes meaningful at 50k+ monthly visitors; Nitropay requires ~100k. Focus on traffic first, monetization second.
+
+### Analytics
+- **GoatCounter** at spectroscopy-app.goatcounter.com — in place as of v1.0.1. Free up to 100k pageviews/month. Baseline: ~0 organic visitors as of June 2026.
+
+### Priority 1 — SEO (structural fix)
+The SPA renders an empty `<div id="root">` to crawlers — no indexable content. Fix before any other growth work, otherwise there's nothing for search engines to find.
+- Rich meta tags in `index.html`: title, description, Open Graph, Twitter Card
+- Descriptive, keyword-rich content visible without JavaScript (static HTML in `index.html` or a pre-rendered shell)
+- Target terms: "spectroscopy puzzle", "identify spectral lines", "doppler shift game", "astronomy education tool"
+
+### Priority 2 — Educational resource directories
+Free submissions, sustained referral traffic from educators searching for tools:
+- [MERLOT](https://www.merlot.org) — largest peer-reviewed OER catalog; direct tool submission
+- [OER Commons](https://oercommons.org) — broad OER directory; free submission
+- [NSTA Learning Center](https://learningcenter.nsta.org) — National Science Teaching Association; accepts resource submissions; has dedicated astronomy section
+- [AAS Education Resources](https://aas.org/education) — American Astronomical Society; small but exactly right audience
+- [SERC](https://serc.carleton.edu) — Science Education Resource Center at Carleton; heavily used by college intro astronomy faculty
+- [PhET Activities Database](https://phet.colorado.edu/en/activities/contribution-guidelines) — can't submit as a PhET sim, but submit a lesson plan *featuring* spectroscopy.app; gets it in front of PhET's 250M+ annual users
+
+### Priority 3 — Community
+One-time posts, potential for traffic spikes:
+- Reddit: r/astronomy (1.5M), r/astrophysics, r/physics, r/educationaltechnology
+- GitHub: ensure repo topics include `astronomy`, `spectroscopy`, `education`, `puzzle-game`
+- Product Hunt launch
+
+### Priority 4 — Educator outreach
+Cold email to astronomy faculty at universities teaching intro astronomy. A working demo link is the pitch. Slow but high conversion if it lands — one course adoption = hundreds of users per semester.
+
+### Thresholds
+| Monthly visitors | Action |
+|---|---|
+| 0–5k | Focus on SEO and directory submissions |
+| 5k–50k | Apply for Google AdSense, implement `AdSlot` |
+| 50k–100k | Evaluate Nitropay migration |
+| 100k+ | Nitropay approval likely; explore direct/branded ad deals |
+
+---
+
 ## AWS Infrastructure
 
 | Service | Use | Est. monthly cost |
